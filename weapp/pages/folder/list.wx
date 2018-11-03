@@ -1,0 +1,185 @@
+<template>
+    <view>
+        <view class="card-header">
+            <view class="card-title ui-icon icon-person"> 我的名片</view>
+        </view>
+        <view class="card-list">
+            <block wx:for="{{mine}}" wx:for-index="index" wx:key="id">
+                <view class="card-item" wx:if="{{showMore || index==0}}">
+                    <image class="card-pic" src="{{item.card_url}}" mode="aspectFit" />
+                    <view class="card-params">
+                        <view class="card-name">{{item.name}}</view>
+                        <view class="card-company">{{item.company}}</view>
+                        <view class="card-position">{{item.position}}</view>
+                    </view>
+                </view>
+            </block>
+            <navigator url="../card/edit" class="card-none" wx:if="{{mine.length==0}}" hover-class="none">还没有？去做一张</navigator>
+            <view class="card-more" bindtap="show" wx:if="{{showMore == false && mine.length>1 && multiCard}}">查看更多</view>
+            <view class="card-hidden" bindtap="hide" wx:if="{{showMore == true && mine.length>1 && multiCard}}">收起</view>
+        </view>
+        <view style="height: 35rpx;"></view>
+        <view class="card-header">
+            <view class="card-title ui-icon icon-group"> 收到的名片</view>
+        </view>
+        <block wx:for="{{list}}" wx:for-index="index" wx:key="key">
+        <view class="card-letter"> {{item.firstchar}} </view>
+        <view class="card-list">
+            <navigator url="../card/info?id={{card.id}}" hover-class="none" class="card-item" wx:for="{{item.child}}" wx:for-index="index" wx:key="id" wx:for-item="card">
+                <image class="card-pic" src="{{card.card_url}}" mode="aspectFit" />
+                <view class="card-params">
+                    <view class="card-name">{{card.name}}</view>
+                    <view class="card-company">{{card.company}}</view>
+                    <view class="card-position">{{card.position}}</view>
+                </view>
+            </navigator>
+        </view>
+        </block>
+    </view>
+</template>
+
+<script>
+import regeneratorRuntime from "regenerator-runtime";
+import cardApi from "../../static/apis/card";
+import system from "../../static/utils/system";
+export default {
+    config: {
+        navigationBarTitleText: "名片夹",
+        // backgroundColor: "#F4F4F4",
+        // navigationBarTextStyle: "black"
+    },
+    data: {
+        list: [],
+        showMore: false,
+        multiCard: false
+    },
+    async onLoad() {
+        this.setData({multiCard: getApp().globalData.multiCard});
+        var list = await cardApi.box();
+        this.setData({list: list});
+        var mine = await cardApi.mine();
+        this.setData({mine: mine});
+        // setInterval(function() {
+        //     var userToken = system.syncstorage("userToken");
+        //     if (userToken !== "") {
+        //         wx.switchTab({ url: "./index", fail: function(e) {
+        //             console.log(e);
+        //         }});
+        //     }
+        // }, 1000);
+    },
+    show() {
+        this.setData({showMore: true});
+    },
+    hide() {
+        this.setData({showMore: false});
+    }
+};
+</script>
+
+<style lang="less">
+.content {
+    .mix-flex-center();
+}
+page {
+    background-color: #e4e4e4;
+}
+.card {
+    &-header {
+        background-color: #fff;
+        height: 85rpx;
+        padding-left: 30rpx;
+        font-size: 28rpx;
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rpx;
+    }
+    &-pic {
+        margin-right: 20rpx;
+        width: 220rpx;
+        height: 133rpx;
+        border: 1rpx solid #ECECEC;
+    }
+    &-list {
+        background-color: #fff;
+        padding: 0 15rpx;
+        & .card-item {
+            display: flex;
+            padding: 15rpx 0;
+            justify-content: flex-start;
+            align-items: center;
+            border-bottom: 1rpx solid #ECECEC;
+            &:last-child {
+                border-bottom-width: 0;
+            }
+        }
+    }
+    &-params {
+        height: 135rpx;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        // align-items: center;
+        & view {
+            font-size: 22rpx;
+            color: #666;
+            &:first-child {
+                font-size: 32rpx;
+                font-weight: 600; 
+            }
+        }
+    }
+    &-letter {
+        background-color: #f8f8f8;
+        height: 35rpx;
+        padding-left: 15rpx;
+        font-size: 18rpx;
+        display: flex;
+        align-items: center;
+    }
+    &-hidden {
+        height: 80rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &:after {
+            content: "\e60a";
+            font-family: "iconfont" !important;
+            margin-left: 10rpx;
+            font-style: normal;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    }
+    &-more {
+        height: 80rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &:after {
+            content: "\e607";
+            font-family: "iconfont" !important;
+            margin-left: 10rpx;
+            // font-style: normal;
+            // -webkit-font-smoothing: antialiased;
+            // -moz-osx-font-smoothing: grayscale;
+        }
+    }
+    &-none {
+        height: 80rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center; &:after {
+            content: "\e604";
+            font-family: "iconfont" !important;
+            margin-left: 10rpx;
+            // font-style: normal;
+            // -webkit-font-smoothing: antialiased;
+            // -moz-osx-font-smoothing: grayscale;
+        }
+    }
+}
+.buttonContent {
+    padding: 50px;
+}
+</style>

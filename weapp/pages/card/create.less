@@ -1,0 +1,193 @@
+.container {
+    width: 690rpx;
+    // height: 100%;
+    border: 1rpx solid #dedede;
+    border-radius: 10rpx;
+    margin: 20rpx 30rpx 110rpx;
+    box-sizing: border-box;
+    background-color: #FFF;
+    /* box-shadow: 15rpx 15rpx 15rpx 15rpx rgba(222, 222, 222, 0.2);
+    box-shadow: #dedede 10rpx 10rpx 10rpx 10rpx;
+    box-shadow:15rpx 15rpx 15rpx #dedede,15rpx -15rpx 15rpx #dedede,-15rpx 15rpx 15rpx #dedede,-15rpx -15rpx 15rpx #dedede; */
+}
+.upload {
+    width: 220rpx;
+    height: 185rpx;
+    padding: 25rpx 40rpx 0 0;
+    &-image {
+        width: 150rpx;
+        height: 150rpx;
+        border-radius: 100rpx;
+    }
+}
+.icon-camera {
+    z-index: 200;
+    // position: relative;
+    color: #ccc;
+    position: absolute;
+    // bottom: 0;
+    // right: 0;
+    top: 145rpx;
+    left: 160rpx;
+    width: 50rpx;
+    height: 50rpx;
+    font-size: 36rpx;
+    background-color: #FFF;
+    border-radius: 25rpx;
+    &:before {
+        margin-left: 7rpx;
+        margin-top: 7rpx;
+    }
+}
+.icon-touxiang {
+    width: 150rpx;
+    height: 150rpx;
+    font-size: 150rpx;
+    color: #E9E9E9;
+    border-radius: 100rpx;
+}
+.icon-location {
+    font-size: 28rpx;
+    width: 40rpx;
+}
+.row {
+    margin: 0 30rpx;
+    border-bottom: 1rpx solid #dedede;
+    height: 80rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 630rpx;
+    &-part {
+        margin: 0;
+        width: 410rpx;
+    }
+    &-label {
+        height: 80rpx;
+        width: 130rpx;
+        &>text {
+            display: inline-block;
+            font-size: 24rpx;
+            line-height: 80rpx;
+            color: #333;
+            &:first-child {
+                color: red;
+                width: 20rpx;
+            }
+            &:last-child {
+                width: 110rpx;
+                text-align: center;
+                /*  text-align: justify;
+                text-align-last: justify; */
+            }
+        }
+    }
+    &>input {
+        height: 80rpx;
+        line-height: 80rpx;
+        font-size: 24rpx;
+        width: 470rpx;
+    }
+    &-text {
+        // text-align: right;
+        font-size: 28rpx;
+        color: #999;
+        line-height: 28rpx;
+        display: block;
+        width: 280rpx;
+        &:after {
+            font-family: 'iconfont' !important;
+            float: right;
+            content: "\e604";
+            color: #999;
+        }
+    }
+    &-show {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80rpx;
+        color: #666;
+        font-size: 22rpx;
+        & > .ui-icon:before {
+            margin-left: 10rpx;
+        }
+    }
+    &:last-child {
+        // background-color: #ed7050;
+        border-bottom: 1rpx solid #FFF;
+    }
+}
+.area {
+    border: 1rpx solid #dddddd;
+    margin: 0 30rpx;
+    &-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20rpx;
+        & > view {
+            font-size: 24rpx;
+            line-height: 60rpx;
+            color: #333;
+        }
+    }
+    & > textarea {
+        padding: 0 20rpx 20rpx;
+    }
+}
+.float-view {
+    background-color: #fff;
+    height: 90rpx;
+    position: fixed;
+    z-index: 99;
+    border-top: 1rpx #ececec solid;
+    box-shadow: 3rpx 0 0 #c8c8c8 inset;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 750rpx;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.light-button {
+    width: 38%;
+    color: #333;
+    font-size: 28rpx;
+    line-height: 90rpx;
+    text-align: center;
+    background-color: #fff;
+    border-width: 0;
+    &:before {
+        margin-right: 10rpx;
+    }
+    &:after {
+        border: 0;
+    }
+    margin: 0;
+    padding: 0;
+    // display: fixed;
+    // justify-content: center;
+    // align-items: center;
+}
+
+.deep-button {
+    // background-color: #FF2A07;
+    background-color: #ed7050;
+    color: #fff;
+    font-size: 32rpx;
+    line-height: 90rpx;
+    height: 90rpx;
+    width: 62%;
+    vertical-align: middle;
+    text-align: center;
+    &:after {
+        border: 0;
+    }
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    // text-decoration: underline;
+}

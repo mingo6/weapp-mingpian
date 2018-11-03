@@ -1,0 +1,261 @@
+<template>
+	<view>
+		<ui-tabs index="{{ current }}" probe="1" bindchange="handleChange" ink-bar active-tab-style="{{activeTabStyle}}" tab-style="{{TabStyle}}" ink-bar-style="{{inkBarStyle}}">
+			<ui-tab wx:for="{{cateList}}" wx:key="index" wx:for-item="item" data-id="{{item.id}}">{{item.name}}</ui-tab>
+		</ui-tabs>
+		<swiper class="content" current="{{ current }}" bindchange="handleContentChange">
+			<swiper-item wx:for="{{listData}}" wx:for-item="list" wx:key="key">
+				<view class="record-item" wx:for="{{list.data}}" wx:key="id">
+					<image src="{{item.avatar}}" mode="aspectFit" class="record-image" />
+					<view class="record-info">
+						<view class="record-info-name">{{item.name}}</view>
+						<view class="record-info-time">{{item.update_time}}</view>
+					</view>
+					<view class="record-status">
+						<view style="width: 220rpx;">
+							<form bindsubmit="agreeClick" report-submit='true' data-id="{{item.id}}">
+								<button form-type="submit" class="record-status-button record-status-agree" wx:if="{{item.reply_state!=1}}">同意</button>
+							</form>
+							<form bindsubmit="refuseClick" report-submit='true' data-id="{{item.id}}">
+								<button form-type="submit" class="record-status-button record-status-refuse" wx:if="{{item.reply_state!=2}}">拒绝</button>
+							</form>
+						</view>
+						<view class="record-status-text record-status-agree" wx:if="{{item.reply_state==1}}">已同意</view>
+						<view class="record-status-text record-status-refuse" wx:if="{{item.reply_state==2}}">已拒绝</view>
+					</view>
+				</view>
+			</swiper-item>
+		</swiper>
+	</view>
+</template>
+<script>
+import regeneratorRuntime from 'regenerator-runtime';
+import authApi from "../../../static/apis/auth";
+import cardApi from "../../../static/apis/card";
+import system from "../../../static/utils/system";
+export default {
+	config: {
+        usingComponents: {
+            "cc-no-data": "../../../packages/cc-no-data"
+        },
+		navigationBarTitleText: '交换申请',
+        enablePullDownRefresh: true,
+		navigationBarBackgroundColor: '#0b6bbb'
+	},
+	data: {
+		current: 0,
+		activeTabStyle: {
+			'color': '#FFF',
+		},
+		inkBarStyle: {
+			'border-bottom': '1px solid white',
+			'width': '100%',
+			'color': 'white'
+		},
+		tabStyle: {
+			'flex': '0 0 40px'
+		},
+		TabStyle: {
+			'color': '#FFFFFF'
+		},
+		cateList: [
+			{ name: "全部", id: '' },
+			{ name: "未处理", id: '0' },
+			{ name: "已同意", id: '1' },
+			{ name: "已拒绝", id: '2' },
+		],
+		list: null,
+		pageLimit: 10,
+		listData: [{
+				data: null,
+				isPageEmpty: false,
+				isPageReachBottom: false,
+				pageNo: 1,
+			},
+			{
+				data: null,
+				isPageEmpty: false,
+				isPageReachBottom: false,
+				pageNo: 1,
+			},
+			{
+				data: null,
+				isPageEmpty: false,
+				isPageReachBottom: false,
+				pageNo: 1,
+			},
+			{
+				data: null,
+				isPageEmpty: false,
+				isPageReachBottom: false,
+				pageNo: 1,
+			}
+		]
+	},
+	// 页面初始化
+	async handleChange(e) {
+		var current = this.data.current;
+        let index = e.detail.index;
+        if (index !== current) {
+            this.setData({
+                current: index
+            });
+            await this.switchTab(index);
+        }
+	},
+	async handleContentChange(e) {
+		let current = e.detail.current
+		this.setData({
+			current: current
+		});
+	},
+	async switchTab(current, force = false) {
+		var listData = this.data.listData[current];
+		await this.buildData(1);
+		if (listData.data === null || force) {
+		}
+	},
+	async buildData(page = 1) {
+		var current = this.data.current;
+		var status = this.data.cateList[current].id;
+		var listData = this.data.listData[current];
+		var data = [];
+		data = await cardApi.apply(status, listData.pageNo, this.data.pageLimit);
+		if (listData.data !== null && listData.pageNo !== 1) {
+			listData.data = listData.data.concat(data);
+		} else {
+			listData.data = data;
+		}
+		if (listData.data.length === 0) {
+			listData.isPageEmpty = true;
+		}
+		if (listData.isPageEmpty === false) {
+			if (data.length < this.data.pageLimit) {
+				listData.isPageReachBottom = true;
+			}
+		}
+
+		this.setData({ listData: this.data.listData });
+	},
+	async onReachBottom() {
+		var current = this.data.current;
+		var listData = this.data.listData[current];
+		if (listData.isPageReachBottom === false) {
+			listData.pageNo++;
+			await this.buildData(listData.pageNo);
+		}
+	},
+	async agreeClick(e) {
+		console.log(e.detail.formId);
+		var id = e.currentTarget.dataset.id;
+		var res = await cardApi.reply(id, 1, e.detail.formId);
+		if (res === true) {
+			wx.showTips('操作成功');
+			await this.buildData(1);
+		} else {
+			wx.showAlert(res ? res : '操作失败')
+		}
+	},
+	async refuseClick(e) {
+		var id = e.currentTarget.dataset.id;
+		var res = await cardApi.reply(id, 2, e.detail.formId);
+		if (res === true) {
+			wx.showTips('操作成功');
+			await this.buildData(1);
+		} else {
+			wx.showAlert(res ? res : '操作失败')
+		}
+	},
+	async onPullDownRefresh() {
+		await this.buildData(1);
+		wx.stopPullDownRefresh();
+	},
+	async onLoad() {
+		this.loadData();
+	},
+	async loadData() {
+		try {
+			await this.buildData(1);
+			// await this.loadList(this.data.current, true);
+		} catch (e) {
+			console.error(e);
+		}
+		
+	}
+}
+
+</script>
+<style lang="less">
+ui-tabs {
+	background-color: #0b6bbb;
+}
+.record {
+	&-item {
+		background-color: #fff;
+		height: 110rpx;
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		width: 100%;
+		padding: 0 30rpx;
+		margin-bottom: 20rpx;
+	}
+	&-image {
+		width: 75rpx;
+		height: 75rpx;
+		border-radius: 10rpx;
+		margin-right: 20rpx;
+	}
+	&-info {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		align-items: flex-start;
+		&-name {
+			font-size: 28rpx;
+			color: #353535;
+		}
+		&-time {
+			font-size: 20rpx;
+			color: #666;
+		}
+	}
+	&-status {
+		width: 200rpx;
+		display: flex;
+		flex-direction: column-reverse;
+		justify-content: flex-start;
+		align-items: flex-end;
+		&-text {
+			font-size: 20rpx;
+			width: 100rpx;
+			text-align: center;
+		}
+		&-button {
+			font-size: 24rpx;
+			border-style: solid;
+			border-width: 1rpx;
+			border-radius: 22rpx;
+			height: 42rpx;
+			width: 98rpx;
+			line-height: 42rpx;
+			float: right;
+			margin-left: 10rpx
+		}
+		& > form {
+			&:not(:last-child) {
+				margin-right: 10rpx;
+			}
+		}
+		&-agree {
+			color: #1AAD19;
+			border-color: #1AAD19;
+		}
+		&-refuse {
+			color: #E64340;
+			border-color: #E64340;
+		}
+	}
+}
+</style>

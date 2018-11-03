@@ -1,0 +1,290 @@
+<template>
+    <view>
+        <!--index.wxml-->
+        <view class="container" style="height: {{height}}px">
+            <view class="card-top">
+                <view class="name">{{detailInfo.username}}</view>
+                <image src="{{userInfo.avatarUrl}}" class="images" />
+                <view class="type">职位
+                    <view class="position">{{detailInfo.position}}</view>
+                </view>
+                <view class="type">电话
+                    <view class="phone" id="{{detailInfo.phone}}" bindtap="cphone">{{detailInfo.phone}}</view>
+                </view>
+                <view class="type">公司
+                    <view class="nickname">{{detailInfo.company}}</view>
+                </view>
+                <view class="type">邮箱
+                    <view class="email">{{detailInfo.email}}</view>
+                </view>
+            </view>
+            <view class="center">
+                <view class="center-item" bindtap="browse">
+                    <view class="center-content ui-icon icon-review">人气: {{detailInfo.viewed}}</view>
+                </view>
+                <view class="center-item" bindtap="likes">
+                    <view class="center-content ui-icon icon-like">赞: {{detailInfo.liked}}</view>
+                </view>
+                <view class="center-item" bindtap="collect">
+                    <view class="center-content ui-icon icon-collect2">收藏: {{detailInfo.collected}}</view>
+                </view>
+            </view>
+            <view class="bottom">
+                <view class="more">更多</view>
+                <view class="post" placeholder="{{detailInfo.detailInfo}}">{{detailInfo.detailInfo}}</view>
+            </view>
+            <!--<view><image src="src" />面对面扫名片</view>-->
+            <!-- <block wx:if="{{detailInfo.collected == 1}}">
+                <button bindtap="collect" class="button button-first">取消收藏</button>
+            </block>
+            <block wx:else>
+                <button bindtap="collect" class="button button-first" wx:if="{{userInfo}}">收藏到名片夹</button>
+                <button class="button button-first" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo" wx:else>收藏到名片夹</button>
+            </block> -->
+            <button bindtap="collCard" class="button button-second">打开我的名片</button>
+        </view>
+        <view class="float-view" wx:if="{{userInfo}}">
+            <view class="group-buttons">
+                <view class="light-buttons">
+                    <view class="light-button ui-icon icon-collected" bindtap="favoriteClick" wx:if="{{detailInfo.liked == 1}}">已赞</view>
+                    <view class="light-button ui-icon icon-favorite" bindtap="favoriteClick" wx:else>点赞</view>
+                    <view class="light-button ui-icon icon-collected" bindtap="favoriteClick" wx:if="{{detailInfo.collected == 1}}">已收藏</view>
+                    <view class="light-button ui-icon icon-favorite" bindtap="favoriteClick" wx:else>收藏</view>
+                </view>
+                <view class="deep-button ui-icon icon-phone" bindtap="mobileClick" data-mobile="{{detailInfo.phone}}">一键联系</view>
+            </view>
+        </view>
+        <view class="float-view" wx:else>
+            <view class="group-buttons">
+                <view class="light-buttons">
+                    <button class="light-button ui-icon icon-collected" data-type="like" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo" wx:if="{{detailInfo.liked == 1}}">已赞</button>
+                    <button class="light-button ui-icon icon-collected" data-type="like" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo" wx:else>点赞</button>
+                    <button class="light-button ui-icon icon-collected" data-type="collect" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo" wx:if="{{detailInfo.collected == 1}}">已收藏</button>
+                    <button class="light-button ui-icon icon-collected" data-type="collect" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo" wx:else>收藏</button>
+                </view>
+                <button class="deep-button ui-icon icon-phone" data-type="contact" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo">一键联系</button>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+// 自己服务器的地址
+var API_URL = "https://boss.raydonet.com/index.php/Admin/Wx/verificationUser";
+// 微信提供的接口地址
+var HTTP_URL =
+    "https://api.weixin.qq.com/sns/jscode2session?appid=appid&secret=app_sectet&grant_type=authorization_code&js_code=code";
+import regeneratorRuntime from "regenerator-runtime";
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+export default {
+    config: {
+        navigationBarTitleText: ""
+    },
+    data: {
+        userInfo: null,
+        detailInfo: {},
+        gid: 0,
+        height: wx.CONTENT_HEIGHT - 90 * wx.WIN_WIDTH / 750
+    },
+    async onLoad(options) {
+        var that = this;
+        var gid = options.gid; // 联系人ID
+        if (!gid) {
+            gid = 2;
+            // wx.switchTab({
+            //     url: "../home/index"
+            // });
+        }
+        var uid = wx.getStorageSync("uid");
+        console.log(uid);
+
+        if (!uid) {
+            var app = getApp();
+            uid = app.getUserToken();
+            console.log(uid);
+        }
+        var userInfo = wx.getStorageSync("userInfo");
+        this.setData({ userInfo: userInfo });
+        console.log(uid);
+        var res = await cardApi.view(gid, uid);
+        if (res.ret === 0) {
+            var name = that.data.detailInfo.username;
+            wx.setNavigationBarTitle({
+                title: res.data.username + "的名片"
+            });
+            that.setData({
+                detailInfo: res.data,
+                gid: gid
+            });
+        } else {
+            wx.switchTab({
+                url: "../home/index"
+            });
+        }
+    },
+
+    async getUserInfo(e) {
+        console.log(e);
+        var userInfo = await authApi.setUserInfo(e.detail);
+        console.log("结束");
+        if (userInfo !== false) {
+            switch (e.target.dataset.type) {
+                case 'collect':
+                    await this.colletc();
+                    break;
+            
+                case 'like':
+                    await this.like();
+                    break;
+                case 'contact':
+                    await this.cphone(e);
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            wx.showModal({
+                showCancel: false,
+                icon: "loading",
+                title:
+                    "您还没有对此小程序进行授权,请删除此程序,然后进入微信:发现-小程序-搜索“Boss名片”",
+                duration: 2000
+            });
+        }
+    },
+    async collect() {
+        var gid = this.data.detailInfo.id;
+        var coll = this.data.detailInfo.collected;
+        var detailInfo = this.data.detailInfo;
+        var title = "收藏";
+        if (coll) {
+            detailInfo.collected = 0;
+            title = "取消收藏";
+        } else {
+            detailInfo.collected = 1;
+        }
+        var res = await cardApi.collect(gid);
+        if (res !== true) {
+            wx.showModal({
+                title: "提示",
+                content: res.msg ? res.msg : title + "失败"
+            });
+        } else {
+            this.setData({ detailInfo: detailInfo });
+        }
+    },
+    onPullDownRefresh() {
+        wx.stopPullDownRefresh();
+    },
+    async like() {
+        var gid = this.data.detailInfo.id;
+        var coll = this.data.detailInfo.liked;
+        var detailInfo = this.data.detailInfo;
+        var title = "点赞";
+        if (coll) {
+            detailInfo.liked = 0;
+            title = "取消点赞";
+        } else {
+            detailInfo.liked = 1;
+        }
+        var res = await cardApi.like(gid);
+        if (res !== true) {
+            wx.showModal({
+                title: "提示",
+                content: res.msg ? res.msg : title + "失败"
+            });
+        } else {
+            this.setData({ detailInfo: detailInfo });
+        }
+    },
+    collCard() {
+        wx.switchTab({
+            url: "../home/index"
+        });
+    },
+    // 联系客服
+    lianxikefu() {
+        wx.makePhoneCall({
+            phoneNumber: "010-56170950"
+        });
+    },
+    onShareAppMessage() {
+        var that = this;
+        var gid = that.data.gid;
+        return {
+            title: "送你一场落花情,要珍惜啊",
+            path: "/pages/contactUser/contactUser?gid=" + gid
+        };
+    },
+    // 打电话
+    cphone(e) {
+        // console.log(event)
+        wx.makePhoneCall({
+            phoneNumber: this.data.detailInfo.id
+        });
+    }
+};
+</script>
+
+<style lang="less">
+@import "../ucard/card.less";
+.container {
+}
+.float-view {
+    background-color: #fff;
+    height: 90rpx;
+    position: fixed;
+    z-index: 99;
+    border-top: 1rpx #ececec solid;
+    box-shadow: 3rpx 0 0 #c8c8c8 inset;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 750rpx;
+}
+
+.light-buttons {
+    width: 350rpx;
+    float: left;
+    // display: fixed;
+    // justify-content: center;
+    // align-items: center;
+}
+
+.light-button {
+    width: 170rpx;
+    float: left;
+    color: #333;
+    font-size: 28rpx;
+    line-height: 90rpx;
+    text-align: center;
+    background-color: #fff;
+    border-width: 0;
+    &:before {
+        margin-right: 10rpx;
+    }
+    &:after {
+        border: 0;
+    }
+    margin: 0;
+    padding: 0;
+    // display: fixed;
+    // justify-content: center;
+    // align-items: center;
+}
+
+.deep-button {
+    float: left;
+    // background-color: #FF2A07;
+    background-color: #ed7050;
+    color: #fff;
+    font-size: 32rpx;
+    line-height: 90rpx;
+    height: 90rpx;
+    width: 400rpx;
+    vertical-align: middle;
+    text-align: center;
+    // text-decoration: underline;
+}
+</style>

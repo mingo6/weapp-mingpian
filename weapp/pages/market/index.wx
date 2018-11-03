@@ -1,0 +1,393 @@
+<template>
+    <view>
+        <view class="market-filter">
+            <view class="market-location ui-icon icon-location">{{city}}
+            </view>
+            <view class="market-search">
+                <view class="search-box">
+                    <view class="search-form">
+                        <view class="search-icon"></view>
+                        <input type="text" class="search-input" placeholder="{{placeholder ? placeholder : '搜索'}}" value="{{inputValue}}" focus="{{inputShowed}}" bindinput="inputTyping" bindconfirm="searchKeyword" confirm-type="search" />
+                        <view class="search-clear" wx:if="{{inputValue.length > 0}}" bindtap="clearInput">
+                        </view>
+                    </view>
+                    <view class="search-button" bindtap="searchKeyword">确定</view>
+                </view>
+            </view>
+        </view>
+        <scroll-view class="market-list" scroll-y style="{{ {height:height+'px'} }}" bindscrolltolower="onReachBottom" scroll-top="{{scrollTop}}" bindscrolltoupper="onReachTop" bindscroll="onPageScroll">
+            <view class="market-item" wx:for="{{list}}" wx:for-item="item" wx:key="id">
+                <view class="card-body">
+                    <view class="card-avatar">
+                        <image src="{{item.avatar}}" mode="aspectFit" />
+                    </view>
+                    <view class="card-title">
+                        <view class="card-name">{{item.name}}</view>
+                        <view class="card-position">{{item.position}}</view>
+                    </view>
+                    <form bindsubmit="exchangeClick" report-submit='true' data-index="{{index}}">
+                        <view class="card-command">
+                            <button form-type="submit" class="ui-icon icon-exchange"></button>
+                            <view  class="card-text">交换名片</view>
+                        </view>
+                    </form>
+                </view>
+                <view class="card-params">
+                    <view class="ui-icon icon-fire">{{item.viewed}}</view>
+                    <view class="ui-icon icon-heart">{{item.liked}}</view>
+                    <view class="ui-icon icon-location" wx:if="{{item.distance}}">距您{{item.distance}}km</view>
+                </view>
+            </view>
+            <cc-no-data message="没有数据" wx:if="{{isPageEmpty}}"></cc-no-data>
+            <ui-divider padding="20" wx:if="{{isPageReachBottom && pageNo>1}}">已经到底了</ui-divider>
+        </scroll-view>
+    </view>
+</template>
+<script>
+import regeneratorRuntime from 'regenerator-runtime';
+import system from "../../static/utils/system";
+import common from "../../static/apis/common";
+import cardApi from "../../static/apis/card";
+var QQMapWX = require('../../static/libs/qqmap-wx-jssdk.js');
+var qqmapsdk;
+export default {
+    config: {
+        usingComponents: {
+            "cc-no-data": "../../packages/cc-no-data"
+        },
+        enablePullDownRefresh: true,
+        navigationBarTitleText: "市场",
+    },
+    data: {
+        city: '定位中',
+        cityLoading: true,
+        location: null,
+        placeholder: '',
+        inputValue: '',
+        isPageEmpty: false,
+        isPageReachBottom: false,
+        pageNo: 1,
+        pageLimit: 10,
+        list: [],
+        loading: false
+    },
+    clearInput() {
+        this.setData({ inputValue: '' });
+    },
+    inputTyping(e) {
+        this.setData({ inputValue: e.detail.value });
+    },
+    async searchKeyword(e) {
+        await this.buildData(1);
+    },
+    async exchangeClick(e) {
+        var index = e.currentTarget.dataset.index;
+        // console.log(e);
+        if (index > -1) {
+            // console.log('userinfo 组件 ready');
+            var userinfo = system.syncstorage('userInfo');
+            // console.log('userinfo:', userinfo);
+            if (userinfo === '') {
+                return wx.showAlert('请先授权小程序');
+            }
+            var id = this.data.list[index].id;
+            var res = await cardApi.exchange(id, 4, e.detail.formId);
+            if (res === true) {
+                wx.showTips('交换名片申请发送成功');
+            } else {
+                wx.showAlert(res.msg ? res.msg : '交换名片失败');
+            }
+        }
+        // 
+        // await this.buildData(1);
+    },
+    async onLoad() {
+        let that = this;
+        var app = getApp();
+        var location = {};
+        if (!app.globalData.location) {
+            location = await common.getGeo();
+        } else {
+            location = app.globalData.location;
+        }
+        this.setData({
+            city: location.city ? location.city : '定位失败',
+
+        });
+        var dataset = { cityLoading: false };
+        if (location) {
+            dataset.city = location.city;
+            dataset.location = {
+                lat: location.latitude,
+                lng: location.longitude
+            };
+        } else {
+            dataset.city = '定位失败';
+
+        }
+        this.setData(dataset);
+        var list = await this.buildData(1);
+    },
+    getQuery() {
+        var query = {};
+        if (this.data.location) {
+            query = this.data.location;
+        }
+        
+        if (this.data.inputValue.length) {
+            query.key = this.data.inputValue;
+        } else {
+            query.key = '';
+            delete query.key;
+        }
+        return query;
+    },
+    async buildData(page) {
+        var params = this.getQuery();
+        var data = await cardApi.all(page, this.data.pageLimit, params);
+        var list = [];
+        var isPageEmpty = false,
+            isPageReachBottom = false;
+        if (page === 1) {
+            list = data;
+        } else {
+            list = this.data.projectList.concat(data);
+            isPageEmpty = this.data.isPageEmpty;
+            isPageReachBottom = this.data.isPageReachBottom;
+        }
+        if (list.length === 0) {
+            isPageEmpty = true;
+        }
+        var isPageReachBottom = this.data.isPageReachBottom;
+        if (isPageEmpty === false) {
+            if (data.length < this.data.pageLimit) {
+                isPageReachBottom = true;
+            } else {
+                isPageReachBottom = false;
+            }
+        } else {
+            isPageReachBottom = false;
+        }
+
+        var dataset = { list: list };
+        if (isPageEmpty !== this.data.isPageEmpty) {
+            dataset.isPageEmpty = isPageEmpty;
+        }
+        if (isPageReachBottom !== this.data.isPageReachBottom) {
+            dataset.isPageReachBottom = isPageReachBottom;
+        }
+        if (page !== this.data.pageNo) {
+            dataset.pageNo = page;
+        }
+        this.setData(dataset);
+    },
+
+    async onReachTop(e) {
+        if (this.data.loading) {
+            return;
+        }
+         this.setData({ loading: true });
+        await this.buildData(1);
+         this.setData({ loading: false });
+    },
+    async onPullDownRefresh() {
+        await this.buildData(1);
+        wx.stopPullDownRefresh();
+    },
+    async onReachBottom() {
+        if (this.data.isPageReachBottom === false) {
+            var pageNo = this.data.pageNo + 1;
+            await this.buildData(pageNo);
+        }
+    }
+};
+
+</script>
+<style lang="less">
+.market {
+    &-filter {
+        height: 80rpx;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        color: #666;
+        font-size: 24rpx;
+        padding: 0 10rpx;
+        background-color: #FFF;
+        border-bottom: 1rpx solid #D7D6DC;
+        position: fixed;
+        z-index: 99;
+        top: 1;
+        left: 0;
+        right: 0;
+    }
+    &-location {
+        width: 120rpx;
+        &:before {
+            margin-right: 5rpx;
+            color: #999;
+        }
+    }
+    &-list {
+        padding-top: 81rpx;
+    }
+    &-item {
+        width: 750rpx;
+        height: 180rpx;
+        padding: 20rpx 20rpx 0;
+        background-color: #FFF;
+        margin-bottom: 20rpx;
+    }
+}
+
+.icon {
+    &-exchange {
+        color: #e64340;
+        font-size: 42rpx;
+        line-height: 42rpx;
+        background-color: unset;
+        margin: 0;
+        &:after {
+            border: 0;
+        }
+    }
+    &-fire {
+        font-size: 20rpx;
+        width: 200rpx;
+        margin-left: 40rpx;
+        &:before {
+            color: #e64340;
+        }
+    }
+    &-heart {
+        width: 280rpx;
+        &:before {
+            color: #e64340;
+        }
+    }
+}
+
+.card {
+    &-body {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    &-avatar {
+        width: 90rpx;
+        height: 90rpx;
+        &>image {
+            width: 90rpx;
+            height: 90rpx;
+            border-radius: 5rpx;
+            background-color: #999; // border: 1rpx solid #ECECEC;
+        }
+    }
+    &-title {
+        margin: 0 20rpx;
+        width: 480rpx;
+    }
+    &-command {
+        width: 100rpx;
+        text-align: center;
+        flex-direction: column;
+        justify-content: center;
+        display: flex;
+        align-items: center;
+    }
+    &-name {
+        font-size: 30rpx;
+        color: #333;
+    }
+    &-position {
+        font-size: 24rpx;
+        color: #666;
+    }
+    &-text {
+        color: #999;
+        font-size: 20rpx;
+    }
+    &-params {
+        height: 70rpx;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        &>.ui-icon {
+            font-size: 20rpx;
+            color: #999;
+            &:before {
+                font-size: 24rpx;
+                margin-right: 5rpx;
+            }
+        }
+        &>.icon-location {
+            &:before {
+                color: #576b95;
+            }
+        }
+    }
+}
+
+.search {
+    &-box {
+        width: 620rpx;
+        border-radius: 35rpx;
+        background: #FFFFFF;
+        border: 1rpx solid #F5F5F5;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        height: 68rpx; // padding: 0 40rpx;
+    }
+    &-form {
+        width: 568rpx;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start; // padding: 0 40rpx;
+    }
+    &-icon {
+        width: 60rpx;
+        text-align: center;
+        &:before {
+            font-family: 'iconfont' !important;
+            content: "\e643";
+            color: #999;
+            font-size: 22rpx; // margin-right: 10rpx;
+        }
+    }
+    &-input {
+        width: 440rpx;
+        height: 68rpx;
+        line-height: 68rpx;
+        font-size: 22rpx;
+    }
+    &-button {
+        width: 80rpx;
+        text-align: center; // margin: 0 10rpx;
+        line-height: 68rpx;
+        color: #FFF;
+        font-size: 22rpx;
+        background-color: #09bb07;
+        border-radius: 0 35rpx 35rpx 0;
+        height: 68rpx;
+    }
+    &-clear {
+        width: 30rpx;
+        height: 30rpx;
+        background-color: #999;
+        border-radius: 16rpx;
+        -moz-border-radius: 16rpx;
+        -webkit-border-radius: 16rpx;
+        line-height: 32rpx;
+        text-align: center;
+        &:before {
+            font-family: 'iconfont' !important;
+            color: #eee;
+            font-size: 22rpx;
+            content: "\e690";
+            margin-top: -2rpx;
+        }
+    }
+}
+
+</style>

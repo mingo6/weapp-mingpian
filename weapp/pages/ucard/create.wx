@@ -1,0 +1,332 @@
+<template>
+    <view>
+        <form bindsubmit="formSubmit">
+            <view class="container">
+                <!--第一部分-->
+                <view class="update-top">
+                    <view wx:if="{{avatarUrl !== null}}">
+                        <image class="img" src="{{avatarUrl}}" bindtap="uploadImg" />
+                    </view>
+                    <view wx:else>
+                        <image class="img" src="{{userInfo.avatarUrl}}" bindtap="uploadImg" />
+                    </view>
+                    <input type="text" value="{{userInfo.nickName}}" name="username" class="username" />
+                    <!--<input type="text" placeholder="请输入你的姓名" name="username" class="username"/>-->
+                    <input type="text" name="phone" class="phone" bindinput="sendInfo" maxlength="11" placeholder="请输入常用手机号" value="{{mobile}}" />
+                    <button open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" class="btn" wx:if="{{mobileMethod=='get'}}">获取</button>
+                    <button bindtap="btnValidation" class="btn" wx:else>验证</button>
+                    <view class="check" style="display:{{showSend}}">
+                        <text class="check1">验证码</text>
+                        <input type="text" name="checkCode" maxlength="4" bindinput="inputValidation" class="check2" placeholder="请输入短信验证码" />
+                    </view>
+                </view>
+
+                <!--第二部分-->
+                <view class="update-second">
+                    <view class="type">
+                        <text class="form-type">公司</text>
+                        <input type="text" name="company" placeholder="请输入公司名称" class="resource" />
+                    </view>
+                    <view class="type">
+                        <text class="form-type">职务</text>
+                        <input type="text" name="position" placeholder="请输入职务" class="resource" />
+                    </view>
+                    <view class="type types">
+                        <text class="form-type">邮箱</text>
+                        <input type="text" name="email" placeholder="邮箱格式123456@qq.com" class="resource" />
+                    </view>
+                </view>
+
+                <!--第三部分-->
+                <view class="update-third">
+                    <view class="more">更多</view>
+                    <input type="text" class="details" name="detailInfo" placeholder="让你的微信好友能更清楚的认识你.." />
+                </view>
+                <button formType="submit" class="form-submit">创建</button>
+            </view>
+        </form>
+
+    </view>
+</template>
+
+<script>
+import regeneratorRuntime from 'regenerator-runtime';
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+export default {
+    config: {
+        navigationBarTitleText: "创建新名片"
+    },
+    data: {
+        needValid: false,
+        mobile: '',
+        nickName: null, // 用户的昵称
+        avatarUrl: null, // 用户的头像
+        yanzhen: true, // 验证按钮(true为开启禁用,false为关闭禁用)
+        showSend: "none", // 验证标签(none为不显示,block为显示)
+        code: null, // 验证码(验证成功后返回验证码)
+        phone: null, // 这是用户输入的手机号
+        status: null, // 验证状态(null为未验证,1为验证)
+        img: null,
+        mobileMethod: 'get'
+    },
+    // 页面初始化
+    onLoad: function() {
+        var that = this;
+        var userInfo = getApp().globalData.userInfo;
+        this.setData({
+            userInfo: userInfo
+        });
+        //调用应用实例的方法获取全局数据
+        // wx.getUserInfo({
+        //     success: function(res) {
+        //         //更新数据
+        //         that.setData({
+        //             userInfo: res.userInfo
+        //         });
+        //     }
+        // });
+    },
+    async getPhoneNumber(e) {
+        var data = e.detail;
+        console.log(data);;
+        
+        if (data.errMsg === "getPhoneNumber:ok") {
+            delete(data.errMsg);
+            var phone = await authApi.getPhoneNumber(data);
+            if (phone !== false) {
+                this.setData({mobile: phone});
+            }
+        }
+
+    },
+    // 这是创建的表单提交
+    async formSubmit(e) {
+        var that = this;
+        // var uid = wx.getStorageSync("uid");
+        var status = that.data.mobile.length > 10 && that.data.mobile === this.data.phone;
+        console.log(e.detail);
+        // 判断当前用户是否验证
+        if (that.data.needValid === false || status === true) {
+            var data = e.detail.value;
+                data.valid = 0;
+            if (status === true) {
+                data.valid = 1;
+            }
+            data.type = 1;
+            delete(data.checkCode);
+            var res = await cardApi.create(data);
+            if (res === true) {
+                wx.switchTab({
+                    url: "../home/index"
+                });
+            } else {
+                wx.showToast({
+                    title: res,
+                    icon: "success",
+                    duration: 2000
+                });
+            }
+        } else {
+            wx.showModal({
+                title: "提示",
+                content: "请您验证您的手机号并完善信息后再提交"
+            });
+        }
+    },
+    // 触发按钮和隐藏属性
+    sendInfo(e) {
+        var that = this;
+
+        var phone = e.detail.value;
+        var leng = e.detail.value.length;
+        if (leng > 10) {
+            that.setData({
+                yanzhen: false, // 按钮
+                // showSend: "block", // 验证码
+                phone: phone // 手机号
+            });
+        }
+    },
+    // 按钮提交
+    btnValidation() {
+        var that = this;
+        var phone = that.data.phone;
+        var name = that.data.userInfo.nickName;
+        wx.request({
+            url: "https://boss.raydonet.com/index.php/Admin/Wx/sendMes",
+            data: { phone: phone, name: name },
+            method: "GET",
+            success: function(res) {
+                wx.showToast({
+                    title: "短信已发送成功,请注意查收",
+                    icon: "success",
+                    duration: 2000
+                });
+                var code = res.data.code;
+                that.setData({
+                    yanzhen: true,
+                    code: code
+                }),
+                    setTimeout(function() {
+                        that.setData({
+                            yanzhen: false
+                        });
+                    }, 60000);
+            }
+        });
+    },
+    inputValidation(e) {
+        // 短信验证成功的弹窗
+        var that = this;
+        var values = e.detail.value;
+        var code = that.data.code;
+        if (values == code) {
+            that.setData({
+                status: 1
+            });
+            wx.showToast({
+                title: "验证成功",
+                icon: "success",
+                duration: 2000
+            });
+        }
+    }
+};
+</script>
+
+<style lang="less">
+/* pages/addCard/addCard.wxss */
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1% 0;
+    padding-bottom: 57.5%;
+    box-sizing: border-box;
+    background-color: #efefef;
+    font-weight: normal;
+}
+/*第一部分*/
+.update-top {
+    margin-top: 20px;
+    width: 100%;
+    min-height: 100px;
+    background-color: white;
+    position: relative;
+    border-top: 1px double #e2e2e2;
+    border-bottom: 1px double #e2e2e2;
+}
+.img {
+    width: 80px;
+    height: 80px;
+    margin-left: 10px;
+    margin-top: 10px;
+    float: left;
+}
+.username {
+    border-bottom: 1px double #e2e2e2;
+    margin-top: 10px;
+    margin-left: 100px;
+    width: 70%;
+    height: 40px;
+    line-height: 40px;
+}
+.phone {
+    font-size: 17px;
+    margin-left: 100px;
+    width: 60%;
+    height: 39px;
+    line-height: 40px;
+}
+.btn {
+    font-size: 14px;
+    width: 60px;
+    color: #2ebaee;
+    height: 30px;
+    line-height: 30px;
+    border: 1px double #2ebaee;
+    position: absolute;
+    right: 15px;
+    top: 55px;
+}
+.check {
+    margin-left: 10px;
+    border-top: 1px double #e2e2e2;
+    width: 93%;
+    height: 40px;
+    line-height: 40px;
+}
+.check1 {
+    font-size: 15px;
+    width: 16%;
+    height: 30px;
+    line-height: 30px;
+    float: left;
+}
+.check2 {
+    font-size: 15px;
+    width: 80%;
+    height: 30px;
+}
+/*第二部分*/
+.update-second {
+    margin-top: 20px;
+    width: 100%;
+    height: 126px;
+    background-color: white;
+    border-top: 1px double #e2e2e2;
+    border-bottom: 1px double #e2e2e2;
+}
+.type {
+    margin-left: 12px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 17px;
+    border-bottom: 1px double #e2e2e2;
+}
+.types {
+    border-bottom: 0px;
+}
+.form-type {
+    float: left;
+}
+.resource {
+    width: 85%;
+    height: 40px;
+    line-height: 40px;
+    margin-left: 50px;
+}
+/*第三部分*/
+.update-third {
+    width: 100%;
+    padding: 10px;
+    height: 80px;
+    background-color: white;
+    margin-top: 20px;
+}
+.more {
+    margin-top: 5px;
+    font-size: 15px;
+    margin-left: 10px;
+    height: 30px;
+    width: 17%;
+    float: left;
+}
+.details {
+    font-size: 17px;
+    width: 77%;
+}
+/*按钮*/
+.form-submit {
+    margin-top: 20px;
+    line-height: 45px;
+    width: 90%;
+    height: 45px;
+    border-radius: 5px;
+    background-color: #2ebaee;
+    color: white;
+}
+</style>

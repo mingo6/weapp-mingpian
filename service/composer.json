@@ -1,0 +1,29 @@
+{
+    "name": "jmapp/weapp-mingpian/service",
+    "description": "名片",
+    "version": "0.1",
+    "homepage": "https://gitee.com/jmapp/weapp-mingpian/tree/develop/service",
+    "license": "MIT",
+    "support":
+    {
+        "issues": "https://gitee.com/jmapp/weapp-mingpian/issues",
+        "wiki": "https://gitee.com/jmapp/weapp-mingpian/wikis"
+    },
+    "require":
+    {
+        "php": ">=5.4.0",
+        "codeigniter/framework": "3.1.*",
+        "overtrue/wechat": "^4.0",
+        "qiniu/php-sdk": "^7.2",
+        "overtrue/pinyin": "^3.0",
+        "sobyte/baidu-aip": "^0.1.0",
+        "sobyte/qcloud-image": "^0.1.0"
+    },
+    "authors": [
+    {
+        "name": "Jimmie",
+        "email": "shearer2001@163.com"
+    }],
+    "autoload":
+    {}
+}

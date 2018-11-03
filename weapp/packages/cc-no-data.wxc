@@ -1,0 +1,39 @@
+<template>
+    <view class="nodata-block">
+        <!-- <ui-icon type="search"></ui-icon> -->
+        <view class="ui-icon icon-none"></view>
+        <view>{{message}}</view>
+    </view>
+</template>
+<script>
+export default {
+    properties: {
+        message: {
+            type: String
+        }
+    },
+    methods: {}
+};
+</script>
+<style lang="less">
+@import "./styles/mixins.less";
+.nodata {
+    &-block {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: nowrap;
+        height: 500rpx;
+    }
+}
+
+.icon-none {
+    font-family: "iconfont" !important;
+    margin-right: 30rpx;
+    &:before {
+        content: "\e60b";
+        font-size: 80rpx;
+    }
+}
+
+</style>

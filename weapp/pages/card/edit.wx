@@ -1,0 +1,349 @@
+<template>
+    <view>
+        <cc-userinfo id='dialog' title='登录并授权' content='小程序需要您的授权\n才能提供更好的服务' confirmText='好的' bind:confirmEvent='confirmEvent' bind:bindGetUserInfo='bindGetUserInfo' force="{{false}}" wx:if="{{showDialog}}">
+        </cc-userinfo>
+        <view class="container">
+            <view class="row" style="height: 185rpx">
+                <view class="upload" bindtap="avatarChoose">
+                    <image class="upload-image" src="{{card.avatar}}" mode="aspectFit" wx:if="{{card.avatar&&card.avatar.length>0}}" />
+                    <image class="upload-image" src="../../static/images/touxiang.svg" mode="aspectFit" wx:else />
+                    <!-- <view class="ui-icon icon-touxiang" wx:else></view> -->
+                    <view class="ui-icon icon-camera"> </view>
+                </view>
+                <view>
+                    <view class="row row-part">
+                        <view class="row-label">
+                            <text>*</text>
+                            <text>姓名</text>
+                        </view>
+                        <input type="text" style="width: 280rpx;" name="name" value="{{card.name}}" placeholder="请输入姓名" confirm-type="next" bindinput="nameInput" />
+                    </view>
+                    <view class="row row-part">
+                        <view class="row-label">
+                            <text>*</text>
+                            <text>性别</text>
+                        </view>
+                        <picker name="gender" mode="selector" value="{{card.gender}}" range="{{sexArray}}" bindchange="genderChange">
+                            <view class="row-text">{{sexArray[card.gender] ? sexArray[card.gender] : '未选择'}}</view>
+                        </picker>
+                    </view>
+                </view>
+            </view>
+            <view class="row">
+                <view class="row-label">
+                    <text>*</text>
+                    <text>手机号码</text>
+                </view>
+                <input type="number" name="mobile" value="{{card.mobile}}" placeholder="请输入手机号码" confirm-type="next" bindinput="mobileInput" />
+            </view>
+            <view class="row">
+                <view class="row-label">
+                    <text>*</text>
+                    <text>公司/单位</text>
+                </view>
+                <input type="text" name="company" value="{{card.company}}" placeholder="请输入公司" confirm-type="next" bindinput="companyInput" />
+            </view>
+            <view class="row">
+                <view class="row-label">
+                    <text>*</text>
+                    <text>部门/职务</text>
+                </view>
+                <input type="text" name="position" value="{{card.position}}" placeholder="请输入职务" confirm-type="next" bindinput="positionInput" />
+            </view>
+            <view class="row">
+                <view class="row-label">
+                    <text> </text>
+                    <text>地址</text>
+                </view>
+                <input style="width: 400rpx;" type="text" value="{{card.address}}" placeholder="点击右侧图标选择地址" name="address" confirm-type="next" bindinput="addressInput" />
+                <view class="ui-icon icon-location" bindtap="chooseLocation"></view>
+            </view>
+            <view wx:if="{{isShowMore}}">
+                <view class="row">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>邮箱</text>
+                    </view>
+                    <input type="text" name="email" value="{{card.email}}" placeholder="请输入邮箱" confirm-type="next" bindinput="emailInput" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>电话</text>
+                    </view>
+                    <input type="text" name="phone" value="{{card.phone}}" placeholder="请输入电话" confirm-type="next" bindinput="phoneInput" />
+                </view>
+                <view class="row" style="border-bottom-width: 0">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>微信</text>
+                    </view>
+                    <input type="text" name="weixin" value="{{card.weixin}}" placeholder="请输入微信号" confirm-type="next" bindinput="weixinInput" />
+                </view>
+                <view class="area">
+                    <view class="area-label">
+                        <view>简介</view>
+                        <view>{{introLength}}/140</view>
+                    </view>
+                    <textarea name="intro" value="{{card.intro}}" placeholder="请输入简介" bindinput="introInput" />
+                </view>
+                <view class="row-show" bindtap="hideMore">
+                    <text>收起</text>
+                    <view class="ui-icon icon-arrow-up"></view>
+                </view>
+            </view>
+            <view class="row-show" bindtap="showMore" wx:else>
+                <text>填写更多资料</text>
+                <view class="ui-icon icon-arrow-down"></view>
+            </view>
+        </view>
+        <view class="float-view">
+            <view class="light-button" bindtap="cancelClick">取消</view>
+            <button class="deep-button" bindtap="submitData">保存</button>
+        </view>
+    </view>
+</template>
+<script>
+import regeneratorRuntime from 'regenerator-runtime';
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+import system from "../../static/utils/system";
+export default {
+    config: {
+        usingComponents: {
+            "cc-userinfo": "../../packages/cc-userinfo"
+        },
+        navigationBarTitleText: "编辑名片"
+    },
+    data: {
+        introLength: 0,
+        height: wx.CONTENT_HEIGHT - 90 * wx.WIN_WIDTH / 750,
+        sexArray: ['请选择', '男', '女'],
+        sex: 0,
+        isShowMore: false,
+        card: {
+            id: 0,
+            name: '',
+            avatar: '',
+            gender: 0,
+            mobile: '',
+            company: '',
+            position: '',
+            address: '',
+            email: '',
+            phone: '',
+            weixin: '',
+            intro: '',
+            latitude: '',
+            longitude: ''
+        },
+        showDialog: false,
+        avatar: ''
+    },
+    async onShow() {
+        // console.log('选择的头像：', this.data.avatar);
+        if (this.data.avatar) {
+            // var res = await system.upload({
+            //     url: "/upload/avatar/",
+            //     filePath: this.data.avatar,
+            //     name: "avatar",
+            //     formData: {
+            //         imgIndex: 1,
+            //         r: Math.random(),
+            //         url: this.data.card.avatar
+            //     }
+            // });
+            // console.log(res);
+            // var data = { avatar: '' };
+            // if (res.ret === 0) {
+            //     this.data.card.avatar = res.data;
+            //     data.card = this.data.card;
+            // } else {
+            //     wx.showAlert({ title: "上传头像", content: res.msg ? res.msg : '上传失败' });
+            // }
+            this.data.card.avatar = this.data.avatar;
+            this.setData({
+                card: this.data.card,
+                avatar: ''
+            });
+        }
+    },
+    async onLoad() {
+        var res = await cardApi.edit();
+        // console.log(res)
+        if (res !== false) {
+            this.setData({
+                card: {
+                    id: res.id,
+                    name: res.name,
+                    avatar: res.avatar,
+                    gender: res.gender,
+                    mobile: res.mobile,
+                    company: res.company,
+                    position: res.position,
+                    address: res.address,
+                    email: res.email,
+                    phone: res.phone,
+                    weixin: res.weixin,
+                    intro: res.intro,
+                    latitude: res.latitude,
+                    longitude: res.longitude
+                }
+            });
+        } else {
+            var userInfo = system.syncstorage('userInfo');
+            if (userInfo === '') {
+                // console.log(userInfo);
+                this.setData({
+                    showDialog: true
+                });
+            } else {
+                var card = this.data.card;
+                card.name = userInfo.nickName;
+                card.avatar = userInfo.avatarUrl;
+                card.gender = userInfo.gender;
+                this.setData({
+                    card: card
+                });
+            }
+        }
+    },
+    async bindGetUserInfo(res) {
+        this.setData({ showDialog: !res.detail });
+        if (res.detail) {
+            await this.initData();
+        }
+        // 用户点击授权后，这里可以做一些登陆操作
+        // this.login();
+    },
+    async initData() {
+        var userInfo = system.syncstorage('userInfo')
+        var card = this.data.card;
+        card.name = card.name ? card.name : userInfo.nickName;
+        card.avatar = card.avatar ? card.avatar : userInfo.avatarUrl;
+        card.gender = card.gender ? card.gender : userInfo.gender;
+        this.setData({
+            card: card
+        });
+        // console.log(userInfo)
+    },
+    async submitData(e) {
+
+        // var uid = wx.getStorageSync("uid");
+        // data.valid = 0;
+        // data.type = 1;
+        // delete data.checkCode;
+        var res = await cardApi.edit(this.data.card);
+        if (res === true) {
+            wx.switchTab({
+                url: "../card/index"
+            });
+        } else {
+            wx.showAlert(res && res.msg ? res.msg : '提交失败');
+        }
+    },
+    async avatarChoose(e) {
+        // var  url = e.currentTarget.dataset.url;
+        try {
+            let wxChooseImage = system.promise(wx.chooseImage);
+            var res = await wxChooseImage({ count: 1, sizeType: ["original", "compressed"], sourceType: ["album", "camera"] });
+            // console.log('res', res);
+            if (res.errMsg === "chooseImage:ok") {
+                var src = res.tempFilePaths[0];
+                wx.navigateTo({
+                    url: `../upload/avatar?src=${src}`
+                });
+            }
+        } catch (e) {
+            console.error('error', e);
+        }
+    },
+    nameInput(e) {
+        this.saveData('name', e.detail.value);
+    },
+    companyInput(e) {
+        this.saveData('company', e.detail.value);
+    },
+    mobileInput(e) {
+        this.saveData('mobile', e.detail.value);
+    },
+    positionInput(e) {
+        this.saveData('position', e.detail.value);
+    },
+    addressInput(e) {
+        this.saveData('address', e.detail.value);
+    },
+    emailInput(e) {
+        this.saveData('email', e.detail.value);
+    },
+    phoneInput(e) {
+        this.saveData('phone', e.detail.value);
+    },
+    weixinInput(e) {
+        this.saveData('weixin', e.detail.value);
+    },
+    introInput(e) {
+        var v = e.detail.value;
+        this.setData({ introLength: v.length });
+        this.saveData('intro', v);
+    },
+    genderChange(e) {
+        var index = e.detail.value;
+        this.saveData('gender', index);
+    },
+    chooseLocation(e) {
+        let that = this;
+        wx.chooseLocation({
+            success(res) {
+                // console.log(res);
+                if (res.address) {
+                    that.saveData('address', res.address);
+                    that.saveData('latitude', res.latitude);
+                    that.saveData('longitude', res.longitude);
+                }
+                if (res.name && that.data.card.company == '') {
+                    that.saveData('company', res.name);
+                }
+            },
+            fail(err) {
+                if (err.errMsg === 'chooseLocation:fail auth deny"') {
+                    wx.showAlert({ title: '未授权小程序', content: '无法使用地图选择地址，请手动输入或删除此小程序后重新添加小程序再试' });
+                }
+                console.error(err);
+            }
+        })
+    },
+    getStrLen(str) {
+        var cnt = 0;
+        for (var i = 0; i < str.length; i++) {
+            var value = str.charCodeAt(i);
+            if (value < 0x080) {
+                cnt += 1;
+            } else if (value < 0x0800) {
+                cnt += 2;
+            } else {
+                cnt += 3;
+            }
+        }
+        return cnt;
+    },
+    hideMore(e) {
+        this.setData({ isShowMore: false });
+    },
+    showMore(e) {
+        this.setData({ isShowMore: true });
+    },
+    saveData(k, v) {
+        this.data.card[k] = v;
+        this.setData({ card: this.data.card });
+    },
+    cancelClick() {
+        wx.navigateBack();
+    }
+};
+
+</script>
+<style lang="less">
+@import "./create.less";
+
+</style>

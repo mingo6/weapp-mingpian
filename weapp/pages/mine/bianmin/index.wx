@@ -1,0 +1,915 @@
+<template>
+    <view>
+        <block wx:for="{{items}}" wx:for-index="index" wx:key="id">
+            <ui-sticky scroll-top="{{ scrollTop }}" top="0">
+                <view class="simple-title">{{item.type}}</view>
+                <view slot="sticky">
+                    <view class="simple-title">{{item.type}}</view>
+                </view>
+            </ui-sticky>
+            <view class="num-list">
+                <view wx:for="{{ item.child }}" wx:for-item="child" class="num-row" wx:key="id">
+                    <view>
+                        <text style="font-size: 32rpx;">{{ child.name }}</text>
+                        <text>{{ child.code }}</text>
+                    </view>
+                    <view bindtap="contactClick" data-code="{{ child.code }}">
+                        <ui-icon type="telephone"></ui-icon>
+                        <text>拨打电话</text>
+                    </view>
+                </view>
+            </view>
+        </block>
+    </view>
+</template>
+<script>
+export default {
+    config: {
+        "navigationBarTitleText": "便民电话",
+        "navigationBarBorderColor": "rgba(231, 231, 231, 0.6)",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black",
+    },
+    data: {
+        NAV_HEIGHT: 0,
+        items: [{
+                type: '公众服务电话号码、常用电话、紧急电话',
+                child: [{
+                        code: 119,
+                        name: '火警电话'
+                    },
+                    {
+                        code: 12395,
+                        name: '水上遇险求救电话'
+                    },
+                    {
+                        code: 110,
+                        name: '报警服务台'
+                    },
+                    {
+                        code: 12121,
+                        name: '气象服务电话'
+                    },
+                    {
+                        code: 120,
+                        name: '急救电话'
+                    },
+                    {
+                        code: 12117,
+                        name: '报时服务电话'
+                    },
+                    {
+                        code: 122,
+                        name: '道路交通事故报警台'
+                    },
+                    {
+                        code: 999,
+                        name: '红十字会急救台'
+                    },
+                    {
+                        code: 12110,
+                        name: '公安短信报警号码'
+                    },
+                    {
+                        code: 95119,
+                        name: '森林火警电话'
+                    },
+                    {
+                        code: 114,
+                        name: '查号台'
+                    },
+                    {
+                        code: 112,
+                        name: '紧急呼叫中心'
+                    },
+                    {
+                        code: 11185,
+                        name: '邮政客户服务电话'
+                    },
+                    {
+                        code: 12306,
+                        name: '全国铁路客服中心'
+                    },
+                    {
+                        code: 12348,
+                        name: '全国法律服务热线'
+                    },
+                    {
+                        code: 160,
+                        name: '声讯服务'
+                    },
+                    {
+                        code: 117,
+                        name: '北京时间'
+                    },
+                    {
+                        code: 2580,
+                        name: '民航信息查询'
+                    },
+                    {
+                        code: 2585,
+                        name: '铁路信息查询'
+                    },
+                    {
+                        code: 221,
+                        name: '气象综合信息'
+                    }
+                ]
+            },
+            {
+                type: '中央党政部门公众服务电话、公益团体服务电话',
+                child: [{
+                        name: '文化部',
+                        code: '010-65551114'
+                    },
+                    {
+                        name: '建设部',
+                        code: '010-58934114'
+                    },
+                    {
+                        name: '民政部',
+                        code: '010-58160600'
+                    },
+                    {
+                        name: '外交部',
+                        code: '010-65961114'
+                    },
+                    {
+                        name: '教育部',
+                        code: '010-66096114'
+                    },
+                    {
+                        name: '劳动部',
+                        code: '010-84201114'
+                    },
+                    {
+                        name: '水利部',
+                        code: '010-63202114'
+                    },
+                    {
+                        name: '财政部',
+                        code: '010-68551114'
+                    },
+                    {
+                        name: '农业部',
+                        code: '010-64193366'
+                    },
+                    {
+                        name: '交通部',
+                        code: '010-65292114'
+                    },
+                    {
+                        name: '海关总署',
+                        code: '010-65194114'
+                    },
+                    {
+                        name: '红十字会',
+                        code: '010-84025890'
+                    },
+                    {
+                        name: '中华慈善总会',
+                        code: '010-66083260'
+                    },
+                    {
+                        name: '壹基金',
+                        code: '021-52504617'
+                    },
+                    {
+                        name: '中国扶贫基金会',
+                        code: '010-82872688'
+                    },
+                    {
+                        name: '中国青少年发展基金会',
+                        code: '010-64035547'
+                    }
+                ]
+            },
+            {
+                type: '全国国家机构监督、投诉、抢修、举报电话',
+                child: [{
+                        code: 95598,
+                        name: '电力系统客服电话'
+                    },
+                    {
+                        code: 12318,
+                        name: '文化市场统一举报电话'
+                    },
+                    {
+                        code: 12315,
+                        name: '消费者投诉举报专线电话'
+                    },
+                    {
+                        code: 12358,
+                        name: '价格监督举报电话'
+                    },
+                    {
+                        code: 12365,
+                        name: '质量监督电话'
+                    },
+                    {
+                        code: 12310,
+                        name: '机构编制违规举报热线'
+                    },
+                    {
+                        code: 12369,
+                        name: '环保局监督电话'
+                    },
+                    {
+                        code: 12333,
+                        name: '民工维权热线电话'
+                    },
+                    {
+                        code: 12345,
+                        name: '政府公益服务接入网'
+                    },
+                    {
+                        code: 12320,
+                        name: '公共卫生环境投诉'
+                    }
+                ]
+            },
+            {
+                type: '全国通信机构服务电话号码',
+                child: [{
+                        code: 10000,
+                        name: '中国电信客户服务热线'
+                    },
+                    {
+                        code: 10010,
+                        name: '中国联通客服热线'
+                    },
+                    {
+                        code: 10086,
+                        name: '中国移动客服热线'
+                    },
+                    {
+                        code: 17900,
+                        name: '中国电信IP电话卡'
+                    },
+                    {
+                        code: 189,
+                        name: '电话报装'
+                    },
+                    {
+                        code: 184,
+                        name: '邮政编码查询'
+                    },
+                    {
+                        code: 17911,
+                        name: '中国联通IP号码'
+                    },
+                    {
+                        code: 17951,
+                        name: '中国移动IP号码'
+                    },
+                    {
+                        code: 116114,
+                        name: '中国联通的“电话导航”业务'
+                    },
+                    {
+                        code: 118114,
+                        name: '中国电信号码百事通'
+                    },
+                    {
+                        code: 10050,
+                        name: '铁通客户服务'
+                    },
+                    {
+                        code: 10086999,
+                        name: '中国垃圾短信投诉号码'
+                    }
+                ]
+            },
+            {
+                type: '全国银行客户服务电话号码',
+                child: [{
+                        code: 95555,
+                        name: '招商银行'
+                    },
+                    {
+                        code: 95599,
+                        name: '农业银行'
+                    },
+                    {
+                        code: 95566,
+                        name: '中国银行'
+                    },
+                    {
+                        code: 95568,
+                        name: '民生银行'
+                    },
+                    {
+                        code: 95533,
+                        name: '建设银行'
+                    },
+                    {
+                        code: 95595,
+                        name: '光大银行'
+                    },
+                    {
+                        code: 95588,
+                        name: '工商银行'
+                    },
+                    {
+                        code: 95559,
+                        name: '交通银行'
+                    },
+                    {
+                        code: 95558,
+                        name: '中信银行'
+                    },
+                    {
+                        code: 95508,
+                        name: '广发银行'
+                    },
+                    {
+                        code: 95528,
+                        name: '浦发银行'
+                    },
+                    {
+                        code: 95577,
+                        name: '华夏银行'
+                    },
+                    {
+                        code: 95501,
+                        name: '深发银行'
+                    },
+                    {
+                        code: 95561,
+                        name: '兴业银行'
+                    }
+                ]
+            },
+            {
+                type: '快递公司客服电话',
+                child: [{
+                        code: 95543,
+                        name: '申通快递'
+                    },
+                    {
+                        code: 95338,
+                        name: '顺丰速运'
+                    },
+                    {
+                        code: 95546,
+                        name: '韵达快递'
+                    },
+                    {
+                        code: 95554,
+                        name: '圆通快递'
+                    },
+                    {
+                        code: 95311,
+                        name: '中通快递'
+                    },
+                    {
+                        code: 95353,
+                        name: '德邦物流'
+                    },
+                    {
+                        code: 4009565656,
+                        name: '百世汇通'
+                    },
+                    {
+                        code: 11185,
+                        name: '邮政特快专递'
+                    }
+                ]
+            },
+            {
+                type: '外卖订餐电话',
+                child: [{
+                        code: 4008517517,
+                        name: '麦当劳'
+                    },
+                    {
+                        code: 4008823823,
+                        name: '肯德基'
+                    },
+                    {
+                        code: 4008123123,
+                        name: '必胜客'
+                    },
+                    {
+                        code: 4006927927,
+                        name: '真功夫'
+                    },
+                    {
+                        code: 4008800400,
+                        name: '丽华快餐'
+                    },
+                    {
+                        code: 4000979797,
+                        name: '永和大王'
+                    }
+                ]
+            },
+            {
+                type: '旅行预订电话',
+                child: [{
+                        code: 4008206666,
+                        name: '携程网'
+                    },
+                    {
+                        code: 4009333333,
+                        name: '艺龙网'
+                    },
+                    {
+                        code: 4007777777,
+                        name: '同程网'
+                    },
+                    {
+                        code: 4006640066,
+                        name: '芒果网'
+                    },
+                    {
+                        code: 4007999999,
+                        name: '途牛网'
+                    },
+                    {
+                        code: 10101234,
+                        name: '去哪儿网'
+                    }
+                ]
+            },
+            {
+                type: '保险客服电话',
+                child: [{
+                        code: 95500,
+                        name: '太平洋保险'
+                    },
+                    {
+                        code: 95510,
+                        name: '阳光保险'
+                    },
+                    {
+                        code: 95511,
+                        name: '平安保险'
+                    },
+                    {
+                        code: 95512,
+                        name: '平安产险'
+                    },
+                    {
+                        code: 95515,
+                        name: '合众人寿保险'
+                    },
+                    {
+                        code: 95518,
+                        name: '中国人民保险'
+                    },
+                    {
+                        code: 95519,
+                        name: '中国人寿保险'
+                    },
+                    {
+                        code: 95512,
+                        name: '泰康人寿保险'
+                    },
+                    {
+                        code: 95522,
+                        name: '泰康人寿保险'
+                    },
+                    {
+                        code: 95535,
+                        name: '生命人寿保险'
+                    },
+                    {
+                        code: 95567,
+                        name: '新华人寿保险'
+                    },
+                    {
+                        code: 95585,
+                        name: '中华保险'
+                    },
+                    {
+                        code: 95589,
+                        name: '太平保险'
+                    },
+                    {
+                        code: 95590,
+                        name: '大地保险'
+                    },
+                    {
+                        code: 95556,
+                        name: '华安财险'
+                    },
+                    {
+                        code: 95509,
+                        name: '华泰财险'
+                    },
+                    {
+                        code: 95507,
+                        name: '大众保险'
+                    },
+                    {
+                        code: 95505,
+                        name: '天安保险'
+                    },
+                    {
+                        code: 95507,
+                        name: '大众保险'
+                    },
+                    {
+                        code: 95596,
+                        name: '民生人寿保险'
+                    },
+                    {
+                        code: 95569,
+                        name: '安邦财险'
+                    },
+                    {
+                        code: 65588598,
+                        name: '信诚人寿保险'
+                    }
+                ]
+            }, {
+                type: '常用大学电话号码',
+                child: [{
+                        name: '北京大学',
+                        code: '010-62752114'
+                    },
+                    {
+                        name: '清华大学',
+                        code: '010-62782165'
+                    },
+                    {
+                        name: '浙江大学',
+                        code: '0571-85172244'
+                    },
+                    {
+                        name: '复旦大学',
+                        code: '021-65642222'
+                    },
+                    {
+                        name: '南京大学',
+                        code: '025-83593186'
+                    },
+                    {
+                        name: '上海交通大学',
+                        code: '021-34206500'
+                    },
+                    {
+                        name: '武汉大学',
+                        code: '027-68755114'
+                    },
+                    {
+                        name: '中国人民大学',
+                        code: '010-62511601'
+                    },
+                    {
+                        name: '华中科技大学',
+                        code: '027-87541114'
+                    },
+                    {
+                        name: '中山大学',
+                        code: '020-84113480'
+                    },
+                    {
+                        name: '吉林大学',
+                        code: '0431-85166420'
+                    },
+                    {
+                        name: '四川大学',
+                        code: '028-85406437'
+                    },
+                    {
+                        name: '北京师范大学',
+                        code: '010-58800260'
+                    },
+                    {
+                        name: '南开大学',
+                        code: '022-23508219'
+                    },
+                    {
+                        name: '中南大学',
+                        code: '0731-88876834'
+                    },
+                    {
+                        name: '山东大学',
+                        code: '0531-88564774'
+                    },
+                    {
+                        name: '中国农业大学',
+                        code: '010-62896811'
+                    },
+                    {
+                        name: '中国科技大学',
+                        code: '0551-3601000'
+                    },
+                    {
+                        name: '西安交通大学',
+                        code: '029-82668888'
+                    },
+                    {
+                        name: '厦门大学',
+                        code: '0592-2186110'
+                    },
+                    {
+                        name: '天津大学',
+                        code: '022-27403536'
+                    },
+                    {
+                        name: '华东师范大学',
+                        code: '021-62233333'
+                    },
+                    {
+                        name: '同济大学',
+                        code: '021-65982200'
+                    },
+                    {
+                        name: '华南理工大学',
+                        code: '020-87110000'
+                    },
+                    {
+                        name: '兰州大学',
+                        code: '0931-8911114'
+                    },
+                    {
+                        name: '东北大学',
+                        code: '024-83679262'
+                    },
+                    {
+                        name: '香港大学',
+                        code: '852-28592111'
+                    },
+                    {
+                        name: '暨南大学',
+                        code: '020-85220114'
+                    },
+                    {
+                        name: '哈尔滨工业大学',
+                        code: '0451-86414060'
+                    },
+                    {
+                        name: '北京航空航天大学',
+                        code: '010-82317114'
+                    }
+                ]
+            },
+            {
+                type: '常用汽车公司800/400电话号码',
+                child: [{
+                        name: '吉利汽车',
+                        code: '4008869888'
+                    },
+                    {
+                        name: '奇瑞汽车',
+                        code: '4008838888'
+                    },
+                    {
+                        name: '上海华普汽车',
+                        code: '8008205598'
+                    },
+                    {
+                        name: '江铃汽车',
+                        code: '8008691099'
+                    },
+                    {
+                        name: '长春一汽',
+                        code: '8008468680'
+                    },
+                    {
+                        name: '一汽大众',
+                        code: '4008171888'
+                    },
+                    {
+                        name: '昌河汽车',
+                        code: '4008879988'
+                    },
+                    {
+                        name: '东风雪铁龙',
+                        code: '4008866688'
+                    },
+                    {
+                        name: '一汽马自达',
+                        code: '8008468680'
+                    },
+                    {
+                        name: '东风日产',
+                        code: '8008308899'
+                    },
+                    {
+                        name: '东风本田',
+                        code: '8008809899'
+                    },
+                    {
+                        name: '广州本田',
+                        code: '8008308999'
+                    },
+                    {
+                        name: '宝马汽车',
+                        code: '4008006666'
+                    },
+                    {
+                        name: '奔驰汽车',
+                        code: '4008181188'
+                    },
+                    {
+                        name: '比亚迪汽车',
+                        code: '4008303666'
+                    },
+                    {
+                        name: '一汽丰田',
+                        code: '8008101210'
+                    },
+                    {
+                        name: '广汽丰田',
+                        code: '8008308888'
+                    },
+                    {
+                        name: '上海大众咨询',
+                        code: '8008201111'
+                    },
+                    {
+                        name: '凯迪拉克咨询',
+                        code: '8008201902'
+                    },
+                    {
+                        name: '雪佛兰',
+                        code: '8008201912'
+                    },
+                    {
+                        name: 'BUICK别克',
+                        code: '8008202020'
+                    },
+                    {
+                        name: '沃尔沃轿车',
+                        code: '8009881200'
+                    },
+                    {
+                        name: 'Ford福特',
+                        code: '8008108168'
+                    },
+                    {
+                        name: '北汽福田',
+                        code: '4008199199'
+                    },
+                    {
+                        name: '东南汽车',
+                        code: '8008581666'
+                    },
+                    {
+                        name: '北京吉普',
+                        code: '8008108880'
+                    },
+                    {
+                        name: '北京现代',
+                        code: '8008101100'
+                    },
+                    {
+                        name: '南京依维柯',
+                        code: '8008281892'
+                    }
+                ]
+            },
+            {
+                type: '常用企业800/400客服电话号码',
+                child: [{
+                        name: '联想',
+                        code: '8008108888'
+                    },
+                    {
+                        name: '方正',
+                        code: '8008101992'
+                    },
+                    {
+                        name: '长城',
+                        code: '8008100285'
+                    },
+                    {
+                        name: '索尼',
+                        code: '8008209000'
+                    },
+                    {
+                        name: '松下',
+                        code: '8008100781'
+                    },
+                    {
+                        name: '爱普生',
+                        code: '8008109977'
+                    },
+                    {
+                        name: '东芝',
+                        code: '8008108208'
+                    },
+                    {
+                        name: '富士通',
+                        code: '8008289383'
+                    },
+                    {
+                        name: '诺基亚',
+                        code: '4008800123'
+                    },
+                    {
+                        name: '苹果',
+                        code: '4006272273'
+                    },
+                    {
+                        name: '三星',
+                        code: '4008105858'
+                    },
+                    {
+                        name: '苏宁电器',
+                        code: '4008365365'
+                    },
+                    {
+                        name: 'NEC',
+                        code: '8008207007'
+                    },
+                    {
+                        name: 'IBM',
+                        code: '8008102828'
+                    },
+                    {
+                        name: '惠普',
+                        code: '8008202255'
+                    },
+                    {
+                        name: '戴尔',
+                        code: '8008580888'
+                    },
+                    {
+                        name: '飞利浦',
+                        code: '8008201201'
+                    },
+                    {
+                        name: '摩托罗拉',
+                        code: '8008105050'
+                    },
+                    {
+                        name: '大中电器',
+                        code: '8008109110'
+                    },
+                    {
+                        name: '国美电器',
+                        code: '8009906600'
+                    },
+                    {
+                        name: '海尔',
+                        code: '4006999999'
+                    },
+                    {
+                        name: '长虹',
+                        code: '4008111666'
+                    },
+                    {
+                        name: '老板',
+                        code: '8008571616'
+                    },
+                    {
+                        name: '苏泊尔',
+                        code: '8008576717'
+                    }
+                ]
+            }
+        ],
+        scrollTop: 0
+    },
+    onPageScroll(e) {
+        this.setData({
+            scrollTop: e.scrollTop
+        })
+    },
+    contactClick(e) {
+        var code = e.currentTarget.dataset.code;
+        // console.log(e);
+        wx.makePhoneCall({ phoneNumber: code.toString() });
+    }
+}
+
+</script>
+<style lang="less">
+.num {
+    &-list {
+        background-color: #fff;
+    }
+    &-row {
+        padding: 13rpx 30rpx;
+        height: 130rpx;
+        color: #666;
+        border-bottom: 1rpx solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        & text {
+            display: block;
+            color: #353535;
+            font-size: 20rpx;
+            line-height: 2;
+        }
+        & .ui-icon {
+            // height: 52rpx;
+            &:before {
+                font-size: 42rpx;
+                color: #eb4340;
+            }
+        }
+        &>view:last-child {
+            width: 90rpx;
+            text-align: center;
+        }
+    }
+}
+
+</style>

@@ -1,0 +1,153 @@
+<template>
+    <view>
+        <form bindsubmit="formSubmit">
+            <view class="container">
+                <view class="row">
+                    <view class="row-label">
+                        <text>*</text>
+                        <text>姓名</text>
+                    </view>
+                    <input type="text" name="name" confirm-type="next" value="{{info.name}}" bindinput="" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text>*</text>
+                        <text>公司/单位</text>
+                    </view>
+                    <input type="text" name="company" confirm-type="next" value="{{info.company}}" bindinput="" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text>*</text>
+                        <text>部门/职务</text>
+                    </view>
+                    <input type="text" name="position" confirm-type="next" value="{{info.position}}" bindinput="" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>手机</text>
+                    </view>
+                    <input type="number" name="mobile" confirm-type="next" value="{{info.mobile}}" bindinput="" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>邮箱</text>
+                    </view>
+                    <input type="text" name="email" confirm-type="next" value="{{info.email}}" bindinput="" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>电话</text>
+                    </view>
+                    <input type="text" name="phone" confirm-type="next" value="{{info.phone}}" bindinput="" />
+                </view>
+                <view class="row">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>地址</text>
+                    </view>
+                    <input type="text" name="address" confirm-type="next" value="{{info.address}}" bindinput="" />
+                </view>
+                <view class="row" style="border-bottom-width: 0">
+                    <view class="row-label">
+                        <text> </text>
+                        <text>微信</text>
+                    </view>
+                    <input type="text" name="weixin" confirm-type="next" value="{{info.weixin}}" bindinput="" />
+                </view>
+                <view class="area">
+                    <view class="area-label">
+                        <view>简介</view>
+                        <view>{{introLength}}/140</view>
+                    </view>
+                    <textarea name="intro" bindinput="introInput" value="{{info.intro}}" />
+                </view>
+            </view>
+            <view class="float-view">
+                <view class="light-button" bindtap="cancelClick">取消</view>
+                <button class="deep-button" formType="submit">保存</button>
+            </view>
+        </form>
+    </view>
+</template>
+
+<script>
+import regeneratorRuntime from 'regenerator-runtime';
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+export default {
+    config: {
+        navigationBarTitleText: "修改名片"
+    },
+    data: {
+        id: 0,
+        info: {},
+        introLength: 0,
+        height: wx.CONTENT_HEIGHT - 90 * wx.WIN_WIDTH / 750
+    },
+    async formSubmit(e) {
+        var that = this;
+        // var uid = wx.getStorageSync("uid");
+        var data = e.detail.value;
+        data.valid = 0;
+        data.type = 1;
+        data.id = this.data.id;
+        delete data.checkCode;
+        var res = await cardApi.modify(data);
+        // console.log(res);
+        if (res === true) {
+            wx.switchTab({
+                url: "../card/index"
+            });
+        } else {
+            wx.showToast({
+                title: res,
+                icon: "success",
+                duration: 2000
+            });
+        }
+    },
+    introInput(e) {
+        var v = e.detail.value;
+        this.setData({ introLength: v.length });
+    },
+    getStrLen(str) {
+        var cnt = 0;
+        for (var i = 0; i < str.length; i++) {
+            var value = str.charCodeAt(i);
+            if (value < 0x080) {
+                cnt += 1;
+            } else if (value < 0x0800) {
+                cnt += 2;
+            } else {
+                cnt += 3;
+            }
+        }
+        return cnt;
+    },
+    cancelClick() {
+        wx.navigateBack();
+    },
+    async onLoad(options) {
+        if (options.id) {
+            this.setData({id: options.id});
+            // console.log(this.data.id);
+            var res = await cardApi.info(this.data.id);
+            if (res !== false) {
+                this.setData({
+                    info: res,
+                    introLength: res.intro.length
+                });
+            }
+        }
+        // console.log(options);
+    }
+};
+</script>
+
+<style lang="less">
+@import "./create.less";
+</style>

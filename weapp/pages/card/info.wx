@@ -1,0 +1,221 @@
+<template>
+    <view>
+        <cc-userinfo id='dialog' title='登录并授权' content='小程序需要您的授权\n才能提供更好的服务' confirmText='好的' bind:confirmEvent='confirmEvent' bind:bindGetUserInfo='bindGetUserInfo' force="{{true}}" wx:if="{{showDialog}}"></cc-userinfo>
+        <view wx:if="{{!showDialog}}">
+            <view class="card">
+                <view class="card-top">
+                    <view class="name">{{info.name}}</view>
+                    <view class="company">{{info.company}}</view>
+                    <view class="position">{{info.position}}</view>
+                    <view class="contact">
+                        <view class="phone ui-icon icon-telephone" wx:if="{{info.phone}}">{{info.phone}}</view>
+                        <view class="email ui-icon icon-mail" wx:if="{{info.email}}">{{info.email}}</view>
+                        <view class="phone ui-icon icon-mobile" wx:if="{{info.mobile}}">{{info.mobile}}</view>
+                    </view>
+                    <view class="address ui-icon icon-location" wx:if="{{info.address}}">{{info.address}}</view>
+                </view>
+                <view class="card-body">
+                    <view class="card-title">
+                        <view class="name">{{info.name}}</view>
+                        <view class="company">{{info.company}}</view>
+                        <view class="position">{{info.position}}</view>
+                    </view>
+                    <view class="setting" bindtap="showAction">设置</view>
+                    <view class="card-detail">
+                        <view class="card-item" wx:if="{{info.mobile}}">
+                            <view class="ui-icon icon-mobile"></view>
+                            {{info.mobile}}
+                        </view>
+                        <view class="card-item" wx:if="{{info.email}}">
+                            <view class="ui-icon icon-mail"></view>
+                            {{info.email}}
+                        </view>
+                        <view class="card-item" wx:if="{{info.phone}}">
+                            <view class="ui-icon icon-telephone"></view>
+                            {{info.phone}}
+                        </view>
+                        <view class="card-item" wx:if="{{info.address}}">
+                            <view class="ui-icon icon-location"></view>
+                            {{info.address}}
+                        </view>
+                        <view class="card-item" wx:if="{{info.weixin}}">
+                            <view class="ui-icon icon-weixin"></view>
+                            {{info.weixin}}
+                        </view>
+                        <view class="card-item" wx:if="{{info.intro}}">
+                            <view class="ui-icon icon-brief"></view>
+                            {{info.intro}}
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="card card-remark">
+                <view class="ui-icon icon-brief"></view>
+                <input style="width: 550rpx;" value="{{info.remark}}" bindblur="saveRemark" placeholder="为这张名片写点儿备注..." />
+            </view>
+            <view style="height: 120rpx;"></view>
+            <view class="float-view">
+                <button bindtap="goClick" wx:if="{{info.collected>0}}">名片夹已有，点击查看</button>
+                <view class="group-buttons" wx:else>
+                    <button bindtap="saveClick" loading="{{loading}}">保存这张名片</button>
+                    <button bindtap="goClick">进入我的名片夹</button>
+                </view>
+            </view>
+        </view>
+        <action-sheet hidden="{{actionSheetHidden}}">
+            <action-sheet-item bindtap="savePhone">保存至手机通讯录</action-sheet-item>
+            <action-sheet-item>
+                <button open-type="share" bindtap="shareCard">转发这张名片</button>
+            </action-sheet-item>
+            <action-sheet-item bindtap="removeCard">删除这张名片</action-sheet-item>
+            <!--自动隐藏action-sheet-->
+            <action-sheet-cancel bindtap="showAction">取消</action-sheet-cancel>
+        </action-sheet>
+    </view>
+</template>
+<script>
+import regeneratorRuntime from "regenerator-runtime";
+import system from "../../static/utils/system";
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+export default {
+    config: {
+        usingComponents: {
+            "cc-userinfo": "../../packages/cc-userinfo"
+        },
+        navigationBarTitleText: "名片详情"
+    },
+    data: {
+        info: {},
+        id: 0,
+        loading: false,
+        showDialog: true,
+        actionSheetHidden: true
+    },
+    async bindGetUserInfo(res) {
+        // console.log(res.detail);
+        this.setData({ showDialog: !res.detail });
+        if (res.detail === true) {
+            await this.loadData();
+        }
+        // 用户点击授权后，这里可以做一些登陆操作
+        // this.login();
+    },
+    async saveClick(e) {
+        await this.saveCard();
+    },
+    async saveCard() {
+        this.setData({ loading: true });
+        var res = await cardApi.collect(this.data.id);
+        this.setData({ loading: false });
+        if (res === true) {
+            var info = this.data.info;
+            info.collected = 1;
+            this.setData({ info: info });
+        }
+    },
+    goClick(e) {
+        wx.switchTab({ url: '../folder/list' });
+    },
+    async saveRemark(e) {
+        var value = e.detail.value;
+        // console.log(e, value);
+        var res = await cardApi.remark(this.data.id, value);
+        if (res !== true) {
+            wx.showAlert({
+                title: "提示",
+                content: '备注失败'
+            });
+        }
+    },
+    async onLoad(options) {
+        var id = 0;
+        if (options.id) {
+            id = options.id;
+        } else {
+            if (options.scene) {
+                var scene = decodeURIComponent(options.scene);
+                if (scene.substr(0, 3) == 'id:') {
+                    id = parseInt(scene.substr(3));
+                }
+            }
+        }
+        // console.log(id);
+        if (id > 0) {
+            this.setData({ id: id });
+            // var userinfo = system.syncstorage('userInfo');
+            // console.log('userinfo:', userinfo);
+            // if (userinfo !== '') {
+            //     await this.loadData();
+            // }
+        } else {
+            wx.switchTab({ url: './index' });
+        }
+    },
+    async loadData() {
+        var res = await cardApi.info(this.data.id);
+        if (res !== false) {
+            this.setData({
+                info: res
+            });
+            if (parseInt(res.collected) !== 1) {
+                await this.saveCard();
+            }
+        }
+    },
+    showAction() {
+        this.setData({
+            actionSheetHidden: !this.data.actionSheetHidden
+        });
+    },
+    savePhone() {
+        var info = this.data.info;
+        wx.addPhoneContact({
+            // photoFilePath: ,
+            firstName: info.name,
+            remark: info.remark,
+            mobilePhoneNumber: info.mobile,
+            weChatNumber: info.weixin,
+            addressStreet: info.address,
+            organization: info.company,
+            title: info.position,
+            workPhoneNumber: info.phone,
+            email: info.email,
+            success(res) {
+                // console.log(res);
+            },
+            fail(err) {
+                console.log(err);
+            }
+        });
+        this.showAction();
+    },
+    shareCard() {
+        wx.showShareMenu({
+            // withShareTicket: true
+        });
+        this.showAction();
+    },
+    onShareAppMessage: function(res) {
+        var info = this.data.info;
+        return {
+            title: "我是" + info.name + "，这是我的名片，请惠存",
+            path: "/pages/card/info?id=" + info.id
+        };
+    },
+    async removeCard() {
+        var res = await cardApi.collect(this.data.id);
+        if (res === true) {
+            var info = this.data.info;
+            info.collected = 0;
+            this.setData({ info: info });
+        }
+        this.showAction();
+    }
+};
+
+</script>
+<style lang="less">
+@import "./info.less";
+
+</style>

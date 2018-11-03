@@ -1,0 +1,170 @@
+<template>
+    <view>
+        <!--pages/resource/resource.wxml-->
+        <view wx:if="{{items === null}}">
+            <view class="container">
+                <image src="../../static/images/sees.png" class="list" wx:if="{{types=='browse'}}" />
+                <image src="../../static/images/likes.png" class="list" wx:if="{{types=='like'}}" />
+                <image src="../../static/images/colls.png" class="list" wx:if="{{types=='collect'}}" />
+                <view class="lists">还没有人来看过.....</view>
+            </view>
+        </view>
+        <view wx:else>
+            <view class="body">
+                <view wx:for="{{items}}">
+                    <view class="ctime" style="display:{{show}}">{{item.ctime}}</view>
+                    <view class="userdetails">
+                        <navigator url="../ucard/contact?gid={{item.id}}">
+                            <image src="{{item.avatarUrl}}" class="user-src" />
+                            <view class="username">{{item.username}}</view>
+                            <view class="company">{{item.company}}</view>
+                        </navigator>
+                        <view class="phone-src">
+                            <image src="../../static/images/dianhua.png" id="{{item.phone}}" bindtap="callPhone" class="phones" />
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+    </view>
+</template>
+
+<script>
+import regeneratorRuntime from "regenerator-runtime";
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+export default {
+    config: {
+        navigationBarTitleText: ""
+    },
+    data: {
+        items: null,
+        show: "none",
+        typename: "sees"
+    },
+    async onLoad(options) {
+        console.log(options);
+        // 页面初始化 options为页面跳转所带来的参数
+        var that = this;
+        var types = options.types;
+        var uid = options.uid;
+        if (types == 'browse') {
+            that.setData({ typename: "sees", show: "block" });
+            wx.setNavigationBarTitle({ title: "访客记录" });
+        } else if (types == 'like') {
+            that.setData({ typename: "likes", show: "block" });
+            wx.setNavigationBarTitle({ title: "我的人气" });
+        } else if (types == 'collect') {
+            that.setData({ typename: "colls", show: "block" });
+            wx.setNavigationBarTitle({ title: "我的名气" });
+        }
+        var res = await cardApi.part(0, types);
+        if (res !== false) {
+            this.setData({items: res});
+        }
+        console.log(res);
+    },
+    callPhone(event) {
+        console.log(event);
+        wx.makePhoneCall({
+            phoneNumber: event.target.id
+        });
+    },
+    onPullDownRefresh() {
+        wx.stopPullDownRefresh();
+    }
+};
+</script>
+
+<style lang="less">
+/* pages/resource/resource.wxss */
+.body {
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1% 0;
+    min-height: 695px;
+    box-sizing: border-box;
+    background-color: #f0eff5;
+}
+.ctime {
+    margin-left: 13px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 14px;
+    color: #cccccc;
+}
+.userdetails {
+    margin-top: 2px;
+    display: block;
+    border: 1px double #d0cfd5;
+    width: 100%;
+    height: 70px;
+    position: relative;
+    background-color: white;
+}
+.user-src {
+    left: 3%;
+    top: 13.8%;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+}
+.username {
+    position: absolute;
+    top: 10%;
+    left: 19%;
+    width: 60%;
+    font-weight: bold;
+    height: 25px;
+    font-size: 17px;
+    line-height: 25px;
+}
+.company {
+    position: absolute;
+    left: 19%;
+    top: 50%;
+    width: 60%;
+    height: 25px;
+    color: #bebebe;
+    font-size: 13px;
+    line-height: 25px;
+}
+.phones {
+    position: absolute;
+    right: 25%;
+    top: 37%;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+}
+.phone-src {
+    position: absolute;
+    right: 0.5%;
+    width: 60px;
+    height: 70px;
+}
+/*这是无数据*/
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 463rpx 0;
+    box-sizing: border-box;
+    background-color: #efefef;
+}
+.list {
+    width: 40%;
+    height: 150px;
+}
+.lists {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #abaab0;
+}
+</style>

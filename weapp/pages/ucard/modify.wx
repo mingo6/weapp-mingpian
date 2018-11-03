@@ -1,0 +1,239 @@
+<template>
+    <view>
+        <!--pages/ucard/ucard.wxml-->
+        <form bindsubmit="formSubmit">
+            <view class="container">
+
+                <!--第一部分-->
+                <view class="update-top">
+                    <image bindtap="ImgUpload" class="img" src="{{userInfo.avatarUrl}}" />
+                    <input type="text" value="{{userDetail.username}}" name="username" class="username" />
+                    <input type="text" class="phone" maxlength="11" value="{{userDetail.phone}}" />
+                    <button open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" class="btn" wx:if="{{mobileMethod=='get'}}">获取</button>
+                    <!-- <button bindtap="connect" class="btn">更换</button> -->
+                </view>
+
+                <!--第二部分-->
+                <view class="update-second">
+                    <view class="type">
+                        <text class="form-type">公司</text>
+                        <input type="text" name="company" value="{{userDetail.company}}" focus="true" class="resource" />
+                    </view>
+                    <view class="type">
+                        <text class="form-type">职务</text>
+                        <input type="text" name="position" value="{{userDetail.position}}" class="resource" />
+                    </view>
+                    <view class="type types">
+                        <text class="form-type">邮箱</text>
+                        <input type="text" name="email" value="{{userDetail.email}}" class="resource" />
+                    </view>
+                </view>
+
+                <!--第三部分-->
+                <view class="update-third">
+                    <view class="more">更多</view>
+                    <input type="text" class="details" name="detailInfo" value="{{userDetail.more}}" />
+                </view>
+                <button formType="submit" class="form-submit">保存</button>
+            </view>
+        </form>
+
+    </view>
+</template>
+
+<script>
+import regeneratorRuntime from "regenerator-runtime";
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+export default {
+    config: {
+        navigationBarTitleText: "修改名片"
+    },
+    data: {
+        mobile: '',
+        mobileMethod: 'get',
+        userInfo: {},
+        userDetail: {}
+    },
+    // 页面初始化
+    async onLoad(options) {
+        var that = this;
+        var uid = wx.getStorageSync("uid");
+        //调用应用实例的方法获取全局数据
+        var userInfo = getApp().globalData.userInfo;
+        this.setData({
+            userInfo: userInfo
+        });
+        var detail = await cardApi.info();
+        if (detail !== false) {
+            this.setData({
+                userDetail: detail
+            });
+        }
+        if (detail.status === 1) {
+             this.setData({
+                mobile: detail.phone
+            });
+        }
+    },
+    async formSubmit(e) {
+        var that = this;
+        var data = e.detail.value;
+        var status = that.data.userDetail.status && that.data.mobile === data.phone;
+        var uid = wx.getStorageSync("uid");
+        data.valid = 0;
+        if (status === true) {
+            data.valid = 1;
+        }
+        data.type = 1;
+        delete(data.checkCode);
+        var res = await cardApi.create(data);
+        if (res === true) {
+            wx.switchTab({
+                url: "../home/index"
+            });
+        } else {
+            wx.showToast({
+                title: res,
+                icon: "success",
+                duration: 2000
+            });
+        }
+    },
+    async getPhoneNumber(e) {
+        var data = e.detail;
+        console.log(data);;
+        
+        if (data.errMsg === "getPhoneNumber:ok") {
+            delete(data.errMsg);
+            var phone = await authApi.getPhoneNumber(data);
+            if (phone !== false) {
+                this.setData({mobile: phone});
+            }
+        }
+
+    },
+    onPullDownRefresh() {
+        wx.stopPullDownRefresh();
+    },
+    connect() {
+        wx.navigateTo({
+            url: "./replace"
+        });
+    }
+};
+</script>
+
+<style lang="less">
+/* pages/ucard/ucard.wxss */
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 58.5%;
+    box-sizing: border-box;
+    background-color: #efefef;
+}
+/*第一部分*/
+.update-top {
+    margin-top: 20px;
+    width: 100%;
+    height: 100px;
+    background-color: white;
+    position: relative;
+    border-top: 1px double #e2e2e2;
+    border-bottom: 1px double #e2e2e2;
+}
+.img {
+    width: 80px;
+    height: 80px;
+    margin-left: 10px;
+    margin-top: 10px;
+    float: left;
+}
+.username {
+    border-bottom: 1px double #e2e2e2;
+    margin-top: 10px;
+    margin-left: 100px;
+    width: 70%;
+    height: 40px;
+    line-height: 40px;
+}
+.phone {
+    margin-left: 100px;
+    width: 65%;
+    height: 39px;
+    line-height: 40px;
+}
+.btn {
+    border: 1px solid #2ebaee;
+    color: #2ebaee;
+    font-size: 14px;
+    width: 60px;
+    height: 30px;
+    line-height: 30px;
+    position: absolute;
+    right: 20px;
+    bottom: 15px;
+}
+/*第二部分*/
+.update-second {
+    margin-top: 20px;
+    border-top: 1px double #e2e2e2;
+    border-bottom: 1px double #e2e2e2;
+    width: 100%;
+    height: 126px;
+    background-color: white;
+}
+.type {
+    margin-left: 12px;
+    height: 41.5px;
+    line-height: 40px;
+    font-size: 17px;
+    border-bottom: 1px double #e2e2e2;
+}
+.types {
+    border-bottom: 0px;
+}
+.form-type {
+    float: left;
+}
+.resource {
+    width: 85%;
+    height: 40px;
+    line-height: 40px;
+    margin-left: 50px;
+}
+/*第三部分*/
+.update-third {
+    width: 100%;
+    padding: 10px;
+    height: 80px;
+    background-color: white;
+    margin-top: 20px;
+}
+.more {
+    margin-top: 5px;
+    font-size: 17px;
+    margin-left: 10px;
+    height: 30px;
+    width: 17%;
+    float: left;
+}
+.details {
+    font-size: 17px;
+    width: 77%;
+}
+/*按钮*/
+.form-submit {
+    margin-top: 20px;
+    line-height: 45px;
+    width: 90%;
+    height: 45px;
+    border-radius: 5px;
+    background-color: #2ebaee;
+    color: white;
+}
+</style>

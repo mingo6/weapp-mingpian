@@ -1,0 +1,255 @@
+<template>
+	<page></page>
+</template>
+<script>
+import system from './static/utils/system'
+import {
+	BASE_URL
+} from './static/utils/constant'
+import regeneratorRuntime from "regenerator-runtime";
+export default {
+	config: {
+		usingComponents: {},
+		pages: [
+			'pages/card/index',
+			'pages/card/create',
+			'pages/card/modify',
+			'pages/card/edit',
+			'pages/card/info',
+			'pages/folder/list',
+			'pages/market/index',
+			'pages/upload/avatar',
+			'pages/mine/index',
+			'pages/mine/bianmin/index',
+			'pages/mine/apply/index',
+			'pages/home/index',
+			'pages/home/load',
+			// 'pages/ucard/create',
+			// 'pages/ucard/modify',
+			// 'pages/ucard/about',
+			// 'pages/ucard/contact',
+			// 'pages/ucard/replace'
+		],
+		window: {
+			backgroundTextStyle: 'dark',
+			backgroundColor: '#efefef',
+			navigationBarBackgroundColor: '#0b6bbb',
+			navigationBarTitleText: '名片口袋',
+			navigationBarTextStyle: 'white'
+		},
+		networkTimeout: {
+			request: 10000
+		},
+		tabBar: {
+			color: '#999',
+			selectedColor: '#09BB07',
+			borderStyle: 'black',
+			backgroundColor: '#EFEFEF',
+			list: [{
+					selectedIconPath: 'static/images/nav-box-on.png',
+					iconPath: 'static/images/nav-box.png',
+					pagePath: 'pages/folder/list',
+					text: '名片夹'
+				},
+				{
+					selectedIconPath: "static/images/nav-card-on.png",
+					iconPath: "static/images/nav-card.png",
+					pagePath: "pages/card/index",
+					text: "名片"
+				},
+				{
+					selectedIconPath: 'static/images/nav-market-on.png',
+					iconPath: 'static/images/nav-market.png',
+					pagePath: 'pages/market/index',
+					text: '市场'
+				},
+				{
+					selectedIconPath: 'static/images/nav-mine-on.png',
+					iconPath: 'static/images/nav-mine.png',
+					pagePath: 'pages/mine/index',
+					text: '我的'
+				}
+			]
+		},
+		theme: {
+			'theme-color': '#1AAD19'
+		},
+		// debug: true
+	},
+	globalData: {
+		appid: 'wxa18e32dcb8bb3a4e',
+		// appsecret: '34c91fd1848f0b919df81211d910748f',
+		userInfo: null,
+		userToken: null,
+		map: {
+			key: 'S2EBZ-POZ3K-LG2J7-AHBOS-AKXCZ-5OF4U',
+			sk: '2DuG2TTorQr82cT2tv9T5jSa0IrtcgWl'
+		},
+		multiCard: false
+	},
+	onLaunch(options) {
+		console.log(options);
+		system.attachInfo();
+		// this.getUserToken()
+		this.InitData()
+	},
+	onShow() {},
+	onHide() {},
+	async getUserToken() {
+		// console.log('userToken', this.globalData.userToken);
+        if (!this.globalData.userToken) {
+            var userToken = system.syncstorage('userToken');
+            if (userToken !== '') {
+                this.globalData.userToken = userToken;
+            } else {
+                let wxLogin = system.promise(wx.login);
+                try {
+                    var res = await wxLogin();
+                    let wxRequest = system.promise(wx.request);
+                    try {
+                        var r = await wxRequest({
+                            url: BASE_URL + '/wechat/openid',
+                            method: 'POST',
+                            data: {
+                                code: res.code,
+                            },
+                            header: {
+                                'content-type': 'application/x-www-form-urlencoded'
+                            }
+                        });
+                        if (r.errMsg === 'request:ok' && r.data.ret === 0) {
+                            var data = r.data.data;
+                            console.log(data);
+                            system.syncstorage('userToken', data);
+                            this.globalData.userToken = data;
+                        }
+                    } catch (err) {
+                        console.error("get session failed", err);
+                    }
+                } catch (e) {
+                    console.error("get login failed", e);
+                }
+            }
+        }
+        return this.globalData.userToken;
+		let that = this
+		if (!this.globalData.userToken) {
+			var userToken = system.syncstorage('userToken')
+			if (userToken !== '') {
+				this.globalData.userToken = userToken
+			} else {
+				let wxLogin = system.promise(wx.login)
+				wxLogin()
+					.then(function(res) {
+						wx.request({
+							url: BASE_URL + '/wechat/openid',
+							method: 'POST',
+							data: {
+								code: res.code
+							},
+							header: {
+								'content-type': 'application/x-www-form-urlencoded'
+							},
+							success(res) {
+								if (res.errMsg === 'request:ok' && res.data.ret === 0) {
+									var data = res.data.data
+									console.log(data)
+									system.syncstorage('userToken', data)
+									that.globalData.userToken = data
+								}
+							}
+						})
+					})
+					.catch(function(e) {
+						console.error('get login failed', e)
+					})
+			}
+		}
+		return this.globalData.userToken
+	},
+	InitData() {
+		var userInfo = system.syncstorage('userInfo')
+		if (userInfo !== '') {
+			this.globalData.userInfo = userInfo
+		}
+		const ext = wx.getExtConfigSync();
+		Object.assign(this.globalData, ext);
+	}
+}
+
+</script>
+<style lang="less">
+@import "./static/styles/index.less";
+
+.simple {
+    &-title {
+        background-color: #F7F9FB;
+        font-size: 14px;
+        font-weight: bold;
+        line-height: 80rpx;
+        padding-left: 40rpx;
+        height: 80rpx;
+        line-height: 80rpx;
+    }
+    &-content {
+        padding: 20rpx 40rpx;
+        line-height: 30rpx;
+    }
+}
+
+.content-list {
+    list-style: none;
+    background-color: #fff;
+    view {
+        padding: 0 30rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+        font-size: 28rpx;
+        color: #666;
+        border-bottom: 1rpx solid #eee;
+    }
+    .grey-bg {
+        background-color: #f5f5f5;
+    }
+}
+.row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 79rpx;
+    width: 100%;
+    &-indent {
+        padding-left: 30rpx;
+        padding-right: 30rpx;
+    }
+    &:not(:last-child) {
+        border-bottom: 1px solid #dedede;
+    }
+    &-list {
+        margin-bottom: 20rpx;
+    }
+    & > .ui-icon {
+        font-size: 32rpx;
+        width: 50rpx;
+        color: #353535;
+    }
+    & > text {
+        width: 100%;
+        color: #353535;
+        font-size: 28rpx;
+    }
+    & > button {
+        width: 100%;
+        color: #353535;
+        font-size: 28rpx;
+        background-color: unset;
+        text-align: left;
+        padding: 0;
+        margin: 0;
+        &:after {
+            border: 0;
+        }
+    }
+
+}
+</style>

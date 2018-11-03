@@ -1,0 +1,221 @@
+<template>
+  <view>
+      <!--pages/replace/replace.wxml-->
+<form bindsubmit="formSubmit">
+    <view class="container1">
+        <view class="container">
+            <view class="first-top">
+                <view class="title">手机号</view>
+                <input type="text" name="phone" placeholder="请输入手机号" maxlength="11" bindinput="inputPhone" class="phone" />
+                <button disabled="{{yanzhen}}" bindtap="checkPhone" class="btn">验证</button>
+            </view>
+            <view class="second-top">
+                <view class="codes">验证码</view>
+                <input type="text" name="code" bindinput="inputCode" maxlength="4" class="code" placeholder="请输入短信验证码"/>
+            </view>
+        </view>
+        <button formType="submit" class="submits">确认</button>
+    </view>
+</form>
+
+
+  </view>
+</template>
+
+<script>
+export default {
+  config: {
+    navigationBarTitleText: '修改手机号'
+  },
+  data:{
+    userInfo:{},
+    yanzhen:true,
+    phone:null,
+    status:1,
+    code:null
+  },
+  // 页面初始化
+  onLoad:function(options){
+    var that = this
+    wx.getUserInfo({
+      success:function(res){
+        //更新数据
+        that.setData({
+          userInfo:res.userInfo
+        })
+      }
+    })
+  },
+  // 这是按钮的长度
+  inputPhone: function (e) {
+    var that = this
+    var phone = e.detail.value
+    var leng = e.detail.value.length
+    if(leng > 10){
+      that.setData({
+        yanzhen:false,   // 按钮
+        phone:phone      // 手机号
+      })
+    }else{
+      that.setData({
+        yanzhen:true
+      })
+    }
+  },
+  // 这是验证手机
+  checkPhone: function () {
+    var that = this
+    var username = that.data.userInfo.nickName
+    var phone = that.data.phone
+    wx.request({
+      url: 'https://boss.raydonet.com/index.php/Admin/Wx/checkPhone',
+      data: {username:username,phone:phone},
+      method: 'GET',
+      success: function(res){
+        // 成功
+        console.log(res)
+        that.setData({yanzhen:true,code:res.data.code})
+        setTimeout(function(){
+          that.setData({
+            yanzhen:false
+          })
+        },60000)
+        wx.showToast({
+          title: '短信已发送至您的手机,请注意查收',
+          icon: 'success',
+          duration: 2000
+        })
+      }
+    })
+  },
+  // 这是表单验证
+  formSubmit: function (e) {
+    var that = this
+    var status = that.data.status
+    var uid = wx.getStorageSync('uid')
+    var phone = e.detail.value.phone
+    console.log(status)
+    if(status === 2){
+      wx.request({
+        url: 'https://boss.raydonet.com/index.php/Admin/Wx/formSubmit',
+        data: {uid:uid,phone:phone},
+        method: 'GET',
+        success: function(res){
+          // success
+          console.log(res)
+          if(res.data.flag === 1){
+            wx.switchTab({
+              url: '../index/index'
+            })
+          }else{
+            wx.showToast({
+            title: res.data.msg,
+            icon: 'success',
+            duration: 2000
+          })
+          }
+        }
+      })
+    }else{
+      wx.showModal({
+        title: '提示',
+        content: '请输入正确的验证码'
+      })
+    }
+  },
+  inputCode:function(e){
+    var that = this
+    var code = that.data.code
+    var codes = e.detail.value
+    if(codes == code){
+      that.setData({status:2})
+    }
+  },
+  onPullDownRefresh: function(){
+    wx.stopPullDownRefresh()
+  },
+}
+</script>
+
+<style lang="less">
+/* pages/replace/replace.wxss */
+.container1 {
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5% 0;
+    box-sizing: border-box;
+    background-color:#F0EFF5;
+}
+.container {
+    border-top:1px double #D9D9D8;
+    border-bottom: 1px double #D9D9D8;
+    width:100%;
+    height:92px;
+    background-color: white;
+}
+.first-top {
+    position:relative;
+    width:90%;
+    margin-left:5%;
+    height:46px;
+    border-bottom:1px double #cccccc;
+}
+.title {
+    position: absolute;
+    line-height:46px;
+    font-size:17px;
+    width:60px;
+}
+.phone {
+    position: absolute;
+    left:80px;
+    width:60%;
+    font-size:17px;
+    height:46px;
+    line-height:46px;
+}
+.btn {
+    border:1px double #2EBAEE;
+    position:absolute;
+    right:0;
+    top:10px;
+    color:#2EBAEE;
+    width:60px;
+    font-size:13px;
+    height:30px;
+    line-height:30px;
+}
+.second-top {
+    position: relative;
+    height:46px;
+    width:90%;
+    margin-left:5%;
+}
+.codes {
+    position: absolute;
+    left:0;
+    font-size:17px;
+    width:60px;
+    height:46px;
+    line-height: 46px;
+}
+.code {
+    position: absolute;
+    left:80px;
+    font-size:17px;
+    width:70%;
+    height: 46px;
+    line-height: 46px;
+}
+.submits {
+    width:90%;
+    background-color:#2EBAEE;
+    margin-top:20px;
+    color:white;
+    height:45px;
+    line-height: 45px;
+    margin-bottom: 496px; 
+}
+</style>

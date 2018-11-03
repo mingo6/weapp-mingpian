@@ -1,0 +1,100 @@
+<template>
+    <view>
+        <view class="header">
+            <view class="header-image">
+                <open-data type="userAvatarUrl"></open-data>
+            </view>
+            <view class="header-title">
+                <open-data type="userNickName"></open-data>
+                <open-data type="userCity"></open-data>
+            </view>
+        </view>
+        <view class="menu-list">
+            <view class="row-list row-indent">
+                <navigator open-type="switchTab" url="../card/index" hover-class="none" class="row">
+                    <view class="ui-icon icon-card-mine"></view>
+                    <text>我的名片</text>
+                    <view class="ui-icon icon-arrow-right"></view>
+                </navigator>
+                <navigator url="./apply/index" hover-class="none" class="row">
+                    <view class="ui-icon icon-record-apply"></view>
+                    <text>申请记录</text>
+                    <view class="ui-icon icon-arrow-right"></view>
+                </navigator>
+                <navigator url="./bianmin/index" hover-class="none" class="row">
+                    <view class="ui-icon icon-bianmin"></view>
+                    <text>便民电话</text>
+                    <view class="ui-icon icon-arrow-right"></view>
+                </navigator>
+                <view class="row">
+                    <view class="ui-icon icon-setting-auth"></view>
+                    <button open-type="openSetting">授权设置</button>
+                    <view class="ui-icon icon-arrow-right"></view>
+                </view>
+                <view class="row">
+                    <view class="ui-icon icon-heart"></view>
+                    <button open-type="feedback">数据反馈</button>
+                    <view class="ui-icon icon-arrow-right"></view>
+                </view>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+export default {
+    config: {
+        navigationBarTitleText: '我的',
+        backgroundColor: '#FFFFFF',
+        navigationBarBackgroundColor: '#0b6bbb'
+    },
+    data: {
+        userInfo: {},
+        yanzhen: true,
+        phone: null,
+        status: 1,
+        code: null
+    },
+    // 页面初始化
+    onLoad: function(options) {},
+    onPullDownRefresh: function() {
+        wx.stopPullDownRefresh()
+    },
+}
+
+</script>
+<style lang="less">
+.header {
+    height: 180rpx;
+    width: 750rpx;
+    padding: 20rpx;
+    background-color: #0b6bbb;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    &-image {
+        width: 140rpx;
+        height: 140rpx;
+        margin-right: 20rpx;
+        &>image,
+        &>open-data {
+            width: 140rpx;
+            height: 140rpx;
+            border-radius: 50%;
+            overflow: hidden;
+            display: block;
+        }
+    }
+    &-title {
+        color: #FFF;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+}
+page {
+    background-color: #fff;
+}
+
+
+</style>

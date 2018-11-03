@@ -1,0 +1,563 @@
+<template>
+    <view>
+        <!-- <cc-userinfo id='dialog' title='登录提示' content='小程序需要您的授权才能提供更好的服务哦' confirmText='知道了' showDialog="{{showDialog}}"> -->
+        <cc-userinfo id='dialog' title='登录并授权' content='小程序需要您的授权\n才能提供更好的服务' confirmText='好的' bind:confirmEvent='confirmEvent' bind:bindGetUserInfo='bindGetUserInfo' force="{{false}}">
+        </cc-userinfo>
+        <swiper indicator-dots="{{false}}" autoplay="{{false}}" duration="{{500}}" style="height: {{height}}px" current="{{swiperIndex}}">
+            <swiper-item wx:for="{{list}}" wx:key="id">
+                <view class="container">
+                    <view class="card" bindtap="makeCardPic">
+                        <view class="name">{{item.name}}</view>
+                        <view class="company">{{item.company}}</view>
+                        <view class="position">{{item.position}}</view>
+                        <view class="contact">
+                            <view class="phone ui-icon icon-telephone" wx:if="{{item.phone}}">{{item.phone}}</view>
+                            <view class="email ui-icon icon-mail" wx:if="{{item.email}}">{{item.email}}</view>
+                            <view class="phone ui-icon icon-mobile" wx:if="{{item.mobile}}">{{item.mobile}}</view>
+                        </view>
+                        <view class="address ui-icon icon-location" wx:if="{{item.address}}">{{item.address}}</view>
+                    </view>
+                    <view class="body">
+                        <view class="qrcode">
+                            <view class="name">{{item.name}}</view>
+                            <view class="company">{{item.company}}</view>
+                            <view class="position">{{item.position}}</view>
+                            <image bindtap="makeCard" src="{{item.qrcode_url}}" />
+                            <view>微信扫一扫二维码，存入名片</view>
+                            <view class="setting" bindtap="showAction">设置</view>
+                        </view>
+                    </view>
+                </view>
+                <button class="send" bindtap="shareClick" open-type="share">发送本张名片</button>
+            </swiper-item>
+            <swiper-item wx:if="{{list.length==0 || multiCard==true}}">
+                <view class="container">
+                    <view class="card card-empty">
+                        <view class="name">我的名字</view>
+                        <view class="company">公司名称</view>
+                        <view class="position">职务</view>
+                        <view class="other">
+                            <view class="phone">电话：xxxxxxxx</view>
+                            <view class="email">邮箱：xxxxxxxxxx</view>
+                            <view class="address">公司地址：xxxxxxxxxxxx</view>
+                        </view>
+                    </view>
+                    <view class="body">
+                        <view class="qrcode">
+                            <image src="../../static/images/gh_beb3ff240468_258.png" mode="aspectFit" />
+                            <view>上传名片，生成专属小程序码</view>
+                        </view>
+                        <view class="command">
+                            <view catchtap="createClick" class="command-item">
+                                <view>
+                                    <image class="command-icon" src="../../static/images/edit.svg" mode="aspectFit" />
+                                </view>
+                                <view class="command-text">手动输入</view>
+                            </view>
+                            <view class="command-item">
+                                <image class="command-icon" src="../../static/images/camera.svg" />
+                                <view class="command-text">拍照识别</view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </swiper-item>
+        </swiper>
+        <view class="swiper-dot">
+            <view wx:for="{{list}}" style="{{swiperIndex == index ? 'background: #000;' : 'background: #999;'}}" wx:key="id" wx:if="{{list.length>1}}"></view>
+            <!-- <view style="{{swiperIndex == list.length ? 'background: #000;' : 'background: #999;'}}"></view> -->
+        </view>
+        <view class="switch">
+            <view class="ui-icon icon-left-bracket" bindtap="prevClick" style="{{prevButton?'':'display:none'}}"></view>
+            <view class="ui-icon icon-right-bracket" bindtap="nextClick" style="{{nextButton?'':'display:none'}}"></view>
+        </view>
+        <import src="../../static/libs/we-cropper/we-cropper.wxml" />
+        <view class="cropper-wrapper" wx:if="{{cutImage}}">
+            <template is="we-cropper" data="{{...cropperOpt}}"></template>
+            <view class="cropper-buttons">
+                <view class="upload" bindtap="uploadTap">
+                    重新选择
+                </view>
+                <view class="getCropperImage" bindtap="getCropperImage">
+                    确定
+                </view>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+import regeneratorRuntime from "regenerator-runtime";
+import system from "../../static/utils/system";
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+import WeCropper from "../../static/libs/we-cropper/we-cropper.js";
+import { BASE_URL } from "../../static/utils/constant";
+const qiniuUploader = require("../../static/libs/qiniu/uploader");
+
+const device = wx.getSystemInfoSync();
+const width = device.windowWidth;
+const height = device.windowHeight - 50;
+export default {
+    config: {
+        usingComponents: {
+            "cc-userinfo": "../../packages/cc-userinfo"
+        },
+        navigationBarTitleText: "我的名片",
+        enablePullDownRefresh: true
+    },
+    data: {
+        height: wx.CONTENT_HEIGHT - 90 * wx.WIN_WIDTH / 750 + wx.STATUS_BAR_HEIGHT,
+        // height: wx.DEFAULT_CONTENT_HEIGHT,
+        swiperIndex: 0,
+        swiperCount: 1,
+        prevButton: false,
+        nextButton: false,
+        list: [],
+        imgWidth: 0,
+        imgHeight: 0,
+        cutImage: false,
+        cropperOpt: {
+            id: "cropper",
+            width,
+            height,
+            scale: 2.5,
+            zoom: 8,
+            cut: {
+                x: (width - 300) / 2,
+                y: (height - 300) / 2,
+                width: 300,
+                height: 300
+            }
+        },
+        showDialog: false,
+        multiCard: false
+    },
+    confirmEvent(e) {},
+    async bindGetUserInfo(res) {
+        // console.log(res.detail);
+        this.setData({ showDialog: !res.detail });
+        if (res.detail === true) {
+            await this.loadData();
+        }
+        // 用户点击授权后，这里可以做一些登陆操作
+        // this.login();
+    },
+    onShareAppMessage: function(res) {
+        if (res.from === "button") {
+            // 来自页面内转发按钮
+            // console.log(res.target);
+        }
+        var info = this.data.list[this.data.swiperIndex];
+        return {
+            title: "我是" + info.name + "，这是我的名片，请惠存",
+            path: "/pages/card/info?id=" + info.id
+        };
+    },
+    prevClick(e) {
+        this.setData({ swiperIndex: this.data.swiperIndex - 1 });
+        this.initSwiperButton();
+    },
+    nextClick(e) {
+        this.setData({ swiperIndex: this.data.swiperIndex + 1 });
+        this.initSwiperButton();
+    },
+    initSwiperButton() {
+        this.setData({
+            prevButton: this.data.swiperIndex > 0 &&
+                this.data.swiperCount > 0,
+            nextButton: this.data.swiperIndex < this.data.swiperCount - 1 &&
+                this.data.swiperCount > 0
+        });
+    },
+    createClick(e) {
+        if (this.data.multiCard) {
+            wx.navigateTo({ url: "./create" });
+        } else {
+            wx.navigateTo({ url: "./edit" });
+        }
+    },
+    async showAction() {
+        let wxShowActionSheet = system.promise(wx.showActionSheet);
+        try {
+            var res = await wxShowActionSheet({
+                itemList: [
+                    "生成我的名片图",
+                    "上传名片码LOGO",
+                    "修改本张名片",
+                    "删除本张名片",
+                    // "给我的名片排序"
+                ]
+            });
+            switch (res.tapIndex) {
+                case 0:
+                    this.makeCardPic();
+                    break;
+                case 1:
+                    this.uploadLogo();
+                    break;
+                case 2:
+                    var info = this.data.list[this.data.swiperIndex];
+                    if (this.data.multiCard) {
+                        wx.navigateTo({ url: "./modify?id=" + info.id });
+                    } else {
+                        wx.navigateTo({ url: "./edit?id=" + info.id });
+                    }
+                    break;
+                case 3:
+                    await this.deleteCard();
+                    break;
+                case 4:
+                    wx.navigateTo({ url: "./order" });
+                    break;
+            }
+        } catch (err) {
+            console.error(err.errMsg);
+        }
+        // await wx.showActionSheet({ // itemList: [ // "生成我的名片图", // "上传名片码LOGO", // "修改本张名片", // "删除本张名片", // // "给我的名片排序" // ], // async success(res) { // }, // fail: function(res) { // } // });
+
+    },
+    async deleteCard() {
+        let wxShowModal = system.promise(wx.showModal);
+        try {
+            var res = await wxShowModal({
+                title: "提示",
+                content: "确定删除本张名片？",
+                confirmText: "取消",
+                cancelColor: "red",
+                cancelText: "删除"
+            });
+            if (res.cancel) {
+                var info = this.data.list[this.data.swiperIndex];
+                var r = await cardApi.delete(info.id);
+                if (r === true) {
+                    var list = this.data.list;
+                    // console.log(list);
+                    list.splice(
+                        this.data.swiperIndex,
+                        1
+                    );
+                    // console.log(list);
+                    // delete(this.data.list[this.data.swiperIndex]);
+                    this.setData({
+                        list: list,
+                        swiperCount: list.length
+                    });
+                }
+            }
+        } catch (e) {
+            console.error(e.errMsg);
+        }
+    },
+    makeCardPic() {
+        let that = this;
+        wx.showModal({
+            title: "提示",
+            content: "可以生成带二维码的名片图，保存至手机相册或收藏到微信，以便快捷发送到微信聊天。",
+            success: function(res) {
+                // console.log(that.data.list);
+                // console.log(that.data.swiperIndex);
+                if (res.confirm) {
+                    var info = that.data.list[that.data.swiperIndex];
+                    // console.log(info);
+                    wx.previewImage({
+                        current: "", // 当前显示图片的http链接
+                        urls: [info.full_url] // 需要预览的图片http链接列表
+                    });
+                }
+            }
+        });
+    },
+    makeCard(e) {
+        var info = this.data.list[this.data.swiperIndex];
+        wx.previewImage({
+            current: "", // 当前显示图片的http链接
+            urls: [info.simple_url] // 需要预览的图片http链接列表
+        });
+    },
+    shareClick(e) {
+        wx.showShareMenu({
+            withShareTicket: true
+        });
+    },
+    uploadLogo() {
+        let that = this;
+        const { cropperOpt } = this.data;
+        wx.chooseImage({
+            count: 1, // 默认9
+            sizeType: ["original", "compressed"], // 可以指定是原图还是压缩图，默认二者都有
+            sourceType: ["album", "camera"], // 可以指定来源是相册还是相机，默认二者都有
+            success: function(res) {
+                cropperOpt.src = res.tempFilePaths[0];
+                that.setData({ cutImage: true });
+                new WeCropper(cropperOpt)
+                    .on("ready", ctx => {
+                        console.log(`wecropper is ready for work!`);
+                    })
+                    .on("beforeImageLoad", ctx => {
+                        console.log(
+                            `before picture loaded, i can do something`
+                        );
+                        console.log(`current canvas context:`, ctx);
+                        wx.showToast({
+                            title: "上传中",
+                            icon: "loading",
+                            duration: 20000
+                        });
+                    })
+                    .on("imageLoad", ctx => {
+                        console.log(`picture loaded`);
+                        console.log(`current canvas context:`, ctx);
+                        wx.hideToast();
+                    })
+                    .on("beforeDraw", (ctx, instance) => {
+                        console.log(`before canvas draw,i can do something`);
+                        console.log(`current canvas context:`, ctx);
+                    })
+                    .updateCanvas();
+                // wx.getImageInfo({
+                //     src: res.tempFilePaths[0],
+                //     success: function(res) {
+                //         //console.log(res.width);
+                //         //console.log(res.height);
+                //         var str = res.width / res.height; //图片的宽高比
+                //         if (str > 1) {
+                //             //横版图片
+                //             _this.data.imgHeight = 400; //图片的显示高度为400
+                //             _this.data.imgWidth = str * _this.data.imgHeight; //图片的宽度 = 宽高比 * 图片的显示高度
+                //         } else {
+                //             //竖版图片
+                //             _this.data.imgWidth = 400; //图片的显示宽度为400
+                //             _this.data.imgHeight = str * _this.data.imgWidth; //图片的高度 = 宽高比 * 图片的显示宽度
+                //         }
+                //     }
+                // });
+            }
+        });
+    },
+    async onLoad(options) {
+        this.setData({ multiCard: getApp().globalData.multiCard });
+        // console.log(options);
+        // var scene = decodeURIComponent(options.scene)
+        // console.log(scene);
+    },
+    async onShow() {},
+    async onPullDownRefresh() {
+        // wx.startPullDownRefresh();
+        await this.loadData();
+        wx.stopPullDownRefresh();
+    },
+    async loadData() {
+        var res;
+        if (this.data.multiCard) {
+            res = await cardApi.list();
+            if (res !== false) {
+                // console.log(res);
+                this.setData({
+                    list: res,
+                    swiperCount: res.length + 1
+                });
+            }
+        } else {
+            res = await cardApi.edit();
+            // console.log(res)
+            if (res !== false) {
+                this.data.list[0] = {
+                    id: res.id,
+                    name: res.name,
+                    avatar: res.avatar,
+                    gender: res.gender,
+                    mobile: res.mobile,
+                    company: res.company,
+                    position: res.position,
+                    address: res.address,
+                    email: res.email,
+                    phone: res.phone,
+                    weixin: res.weixin,
+                    intro: res.intro,
+                    latitude: res.latitude,
+                    longitude: res.longitude,
+                    qrcode_url: res.qrcode_url,
+                    simple_url: res.simple_url,
+                    full_url: res.full_url
+                };
+                this.setData({ list: this.data.list, swiperCount: 1 });
+            }
+        }
+        this.initSwiperButton();
+    },
+    touchStart(e) {
+        this.wecropper.touchStart(e);
+    },
+    touchMove(e) {
+        this.wecropper.touchMove(e);
+    },
+    touchEnd(e) {
+        this.wecropper.touchEnd(e);
+    },
+    // initQiniu() {
+    //     var options = {
+    //         // uploadURL: 'https://up-z1.qbox.me',
+    //         uploadURL: "https://up-z0.qiniup.com",
+    //         region: "ECN",
+    //         uptokenURL: BASE_URL + "/qiniu/uptoken",
+    //         domain: "http://mingpian.bkt.clouddn.com",
+    //         shouldUseQiniuFileName: false,
+    //         key: "WRNB2LG-WKC_C8EphSl9NqZ8-RQb_2AUo6FtbQ4c"
+    //         // uptoken: 'xxx',
+    //     };
+    //     qiniuUploader.init(options);
+    // },
+    getCropperImage() {
+        let that = this;
+        this.wecropper.getCropperImage(avatar => {
+            // console.log(avatar);
+            that.setData({ cutImage: false });
+            var app = getApp();
+            var userToken = app.getUserToken();
+            // var userinfo = app.globalData.auth;
+            var header = {};
+            if (userToken) {
+                header["User-Token"] = userToken.openid;
+                // options.data['user-token'] = userToken.openid;
+            }
+            wx.showNavigationBarLoading();
+            wx.showToast({
+                title: "正在上传...",
+                icon: "loading",
+                mask: true,
+                duration: 1000
+            });
+            // that.initQiniu();
+            // qiniuUploader.upload(
+            //     avatar,
+            //     res => {
+            //         that.setData({
+            //             imageObject: res
+            //         });
+            //     },
+            //     error => {
+            //         console.error("error: " + JSON.stringify(error));
+            //     },
+            //     null, // 可以使用上述参数，或者使用 null 作为参数占位符
+            //     progress => {
+            //         console.log("上传进度", progress.progress);
+            //         console.log("已经上传的数据长度", progress.totalBytesSent);
+            //         console.log(
+            //             "预期需要上传的数据总长度",
+            //             progress.totalBytesExpectedToSend
+            //         );
+            //     },
+            //     cancelTask => that.setData({ cancelTask })
+            // );
+            header["Content-Type"] = "multipart/form-data";
+            var info = that.data.list[that.data.swiperIndex];
+            wx.uploadFile({
+                url: BASE_URL + "/card/upload/",
+                filePath: avatar,
+                name: "file",
+                formData: {
+                    imgIndex: 1,
+                    r: Math.random(),
+                    id: info.id
+                },
+                header: header,
+                dataType: "json",
+                success: res => {
+                    wx.hideLoading();
+                    if (res.statusCode !== 200) {
+                        return wx.showAlert("网络异常，请稍后再试");
+                    }
+                    var r = JSON.parse(res.data);
+                    // console.log(r);
+                    if (r.ret !== 0) {
+                        return wx.showAlert(res.msg ? res.msg : "网络异常，请稍后再试");
+                    }
+                    for (var k in r.data) {
+                        info[k] = r.data[k];
+                    }
+                    that.setData({ list: that.data.list });
+                },
+                fail: err => {
+                    wx.hideLoading();
+                    console.log(err);
+                },
+                complete: res => {
+                    wx.hideNavigationBarLoading();
+                }
+            });
+            if (avatar) {
+                //  获取到裁剪后的图片
+                wx.redirectTo({
+                    url: `../index/index?avatar=${avatar}`
+                });
+            } else {
+                console.log("获取图片失败，请稍后重试");
+            }
+        });
+    },
+    uploadTap() {
+        const self = this;
+        wx.chooseImage({
+            count: 1, // 默认9
+            sizeType: ["original", "compressed"], // 可以指定是原图还是压缩图，默认二者都有
+            sourceType: ["album", "camera"], // 可以指定来源是相册还是相机，默认二者都有
+            success(res) {
+                const src = res.tempFilePaths[0];
+                //  获取裁剪图片资源后，给data添加src属性及其值
+                self.wecropper.pushOrign(src);
+            }
+        });
+    }
+};
+
+</script>
+<style lang="less">
+@import "./index.less";
+.cropper-wrapper {
+    // position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background-color: #e5e5e5;
+}
+
+.cropper-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    line-height: 50px;
+}
+
+.cropper-buttons .upload,
+.cropper-buttons .getCropperImage {
+    width: 50%;
+    text-align: center;
+}
+
+.cropper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.cropper-buttons {
+    background-color: rgba(0, 0, 0, 0.95);
+    color: #04b00f;
+}
+
+.cropper-wrapper {
+    background: #000;
+}
+
+</style>

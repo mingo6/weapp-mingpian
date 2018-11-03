@@ -1,0 +1,201 @@
+<template>
+    <view>
+        <!--这是用户信息缺失的页面-->
+        <view class="container1" wx:if="{{userType==0}}">
+            <image src="../../static/images/list.png" class="img" />
+            <view class="font">你还没有名片哦,赶快来做一张吧</view>
+            <view class="curl" bindtap="curls" wx:if="{{userInfo}}">去做一张</view>
+            <button class="curl" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="getUserInfo" wx:else>去做一张</button>
+        </view>
+        <!--这是用户信息完善的页面-->
+        <view class="container" wx:else>
+            <view class="card-top">
+                <view class="name">{{detailInfo.username}}</view>
+                <image src="{{userInfo.avatarUrl}}" class="images" />
+                <view class="type">职位
+                    <view class="position">{{detailInfo.position}}</view>
+                </view>
+                <view class="type">电话
+                    <view class="phone" id="{{detailInfo.phone}}" bindtap="cphone">{{detailInfo.phone}}</view>
+                </view>
+                <view class="type">公司
+                    <view class="nickname">{{detailInfo.company}}</view>
+                </view>
+                <view class="type">邮箱
+                    <view class="email">{{detailInfo.email}}</view>
+                </view>
+            </view>
+            <view class="center">
+                <view class="center-item" bindtap="browse">
+                    <view class="center-content ui-icon icon-review">人气: {{detailInfo.viewed}}</view>
+                </view>
+                <view class="center-item" bindtap="likes">
+                    <view class="center-content ui-icon icon-like">赞: {{detailInfo.liked}}</view>
+                </view>
+                <view class="center-item" bindtap="collect">
+                    <view class="center-content ui-icon icon-collect2">收藏: {{detailInfo.collected}}</view>
+                </view>
+            </view>
+            <view class="bottom">
+                <view class="more">更多</view>
+                <view class="post" placeholder="{{detailInfo.detailInfo}}">{{detailInfo.detailInfo}}</view>
+            </view>
+            <!--<view><image src="src" />面对面扫名片</view>-->
+            <navigator bindtap="ShareCard" class="button button-first">递名片</navigator>
+            <navigator url="../ucard/modify" class="button button-first">编辑名片</navigator>
+            <view class="reminder">点击右上角,可以分享你的名片哦.</view>
+            <!-- <view class="reminder">再次使用:发现-小程序-搜索“Boss名片”</view> -->
+            <!-- <image src="../../static/images/kefu.png" bindtap="lianxikefu" class="kefu" />
+            <text class="lianxi">联系客服</text> -->
+        </view>
+
+    </view>
+</template>
+
+<script>
+import regeneratorRuntime from "regenerator-runtime";
+import authApi from "../../static/apis/auth";
+import cardApi from "../../static/apis/card";
+import system from "../../static/utils/system";
+export default {
+    config: {
+        usingComponents: {
+            // "cc-card": "../../packages/cc-card"
+        },
+        navigationBarTitleText: "我的名片",
+        backgroundColor: "#F4F4F4",
+        navigationBarTextStyle: "black"
+    },
+    data: {
+        userInfo: null,
+        userType: 0,
+        detailInfo: {}, // 这是创建用户的全部信息
+        items: [],
+        height: wx.CONTENT_HEIGHT - 47
+    },
+    onLoad() {
+        var that = this;
+        var app = getApp();
+        // 缓存读取用户ID
+
+        // wx.showToast({
+        //     title: "正在登录...",
+        //     icon: "loading",
+        //     duration: 1000
+        // });
+        // 返回状态(2为用户创建信息完成,其他为空)
+        // if (b.data.flag === 2) {
+        //     that.setData({
+        //         index1: "none",
+        //         index2: "flex",
+        //         detailInfo: b.data
+        //     });
+        // } else {
+        //     wx.showToast({
+        //         title: "您还没有创建过名片",
+        //         duration: 2000
+        //     });
+        // }
+    },
+    // 页面显示
+    async onShow() {
+        var that = this;
+        // 缓存读取用户ID
+        var userInfo = wx.getStorageSync("userInfo");
+        this.setData({ userInfo: userInfo });
+        var res = await cardApi.info();
+        if (res === false) {
+            wx.showToast({
+                title: "您还没有创建过名片",
+                duration: 2000
+            });
+        } else {
+            if (res.hasOwnProperty("username")) {
+                that.setData({
+                    userType: 1,
+                    detailInfo: res
+                });
+            }
+        }
+
+        // console.log(res);
+        // if (b.data.flag === 2) {
+        //     that.setData({
+        //         index1: "none",
+        //         index2: "flex",
+        //         detailInfo: b.data
+        //     });
+        // }
+    },
+    async getUserInfo(e) {
+        // console.log(e);
+        await authApi.setUserInfo(e.detail, "../ucard/create");
+        // console.log("结束");
+    },
+    // 这是分享
+    onShareAppMessage() {
+        var gid = wx.getStorageSync("uid");
+        return {
+            title: "这是我的名人卡,以后请指教",
+            path: "/pages/ucard/contact?gid=" + gid
+        };
+    },
+    // 事件处理函数
+    browse() {
+        var uid = wx.getStorageSync("uid");
+        wx.navigateTo({
+            url: "../ucard/about?types=browse&uid=" + uid
+        });
+    },
+    likes() {
+        var uid = wx.getStorageSync("uid");
+        wx.navigateTo({
+            url: "../ucard/about?types=like&uid=" + uid
+        });
+    },
+    collect() {
+        var uid = wx.getStorageSync("uid");
+        wx.navigateTo({
+            url: "../ucard/about?types=collect&uid=" + uid
+        });
+    },
+    // 这是添加页面
+    curls() {
+        var userInfo = wx.getStorageSync("userInfo");
+        if (!userInfo) {
+            wx.showModal({
+                showCancel: false,
+                icon: "loading",
+                title:
+                    "您还没有对此小程序进行授权,请删除此程序,然后进入微信:发现-小程序-搜索“Boss名片”",
+                duration: 2000
+            });
+        } else {
+            wx.navigateTo({
+                url: "../ucard/create"
+            });
+        }
+    },
+    // 联系客服
+    lianxikefu() {
+        wx.makePhoneCall({
+            phoneNumber: "010-56170950"
+        });
+    },
+    onPullDownRefresh() {
+        wx.stopPullDownRefresh();
+    },
+    // 打电话
+    cphone(event) {
+        // console.log(event)
+        wx.makePhoneCall({
+            phoneNumber: event.target.id
+        });
+    }
+};
+</script>
+
+<style lang="less">
+@import "./index.less";
+@import "../ucard/card.less";
+</style>
